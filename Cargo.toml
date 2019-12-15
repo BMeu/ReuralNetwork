@@ -1,0 +1,17 @@
+[package]
+name = "reural_network"
+version = "0.1.0"
+edition = "2018"
+authors = ["Bastian Meyer <bastian@bastianmeyer.eu>"]
+description = "A simple neural network library."
+repository = "https://github.com/BMeu/ReuralNetwork"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+keywords = ["neural", "network"]
+categories = ["mathematics", "science"]
+
+[badges]
+codecov = { repository = "BMeu/ReuralNetwork" }
+travis-ci = { repository = "BMeu/ReuralNetwork" }
+
+[dependencies]

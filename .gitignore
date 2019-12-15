@@ -1,0 +1,7 @@
+# Binaries & Other Compilations
+/target
+**/*.rs.bk
+
+# JetBrains IDEs
+.idea
+*.iml

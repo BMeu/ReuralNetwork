@@ -1,0 +1,50 @@
+language: rust
+
+cache: cargo
+
+os:
+  - linux
+  - osx
+  - windows
+
+rust:
+  - stable
+  - beta
+  - nightly
+
+sudo: required
+
+env:
+  global:
+    - PROJECT_NAME=reural_network
+    - RUST_BACKTRACE=1
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - rust: nightly
+
+before_install:
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt update; fi
+
+addons:
+  apt:
+    packages:
+      - libcurl4-openssl-dev
+      - libelf-dev
+      - libdw-dev
+      - libiberty-dev
+      - cmake
+      - gcc
+      - binutils-dev
+      - zlib1g-dev
+
+script:
+  - cargo doc --no-deps
+  - cargo check --all
+  - cargo build --all
+  - cargo test --all
+  - cargo test --all --release
+
+after_success:
+  - bash scripts/kcov.sh
