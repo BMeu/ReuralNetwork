@@ -15,9 +15,10 @@ then
     sudo make install &&
     cd ../.. &&
     rm -rf kcov-master &&
+    ls -lah target/debug/* &&
 
     # Collect the coverage statistics.
-    for file in target/debug/${PROJECT_NAME}-*[^\.d]
+    for file in target/debug/deps/*[^\.d]
     do
         mkdir -p "target/cov/$(basename ${file})"
         kcov --exclude-pattern=/.cargo,/usr/lib,tests --exclude-region='#[cfg(test)]:#[cfg(testkcovstopmarker)]' --verify "target/cov/$(basename ${file})" "${file}"

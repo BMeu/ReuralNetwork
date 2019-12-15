@@ -1,7 +1,5 @@
 language: rust
 
-cache: cargo
-
 os:
   - linux
   - osx
@@ -12,14 +10,12 @@ rust:
   - beta
   - nightly
 
-sudo: required
-
 env:
   global:
     - PROJECT_NAME=reural_network
     - RUST_BACKTRACE=1
 
-matrix:
+jobs:
   fast_finish: true
   allow_failures:
     - rust: nightly
@@ -40,11 +36,11 @@ addons:
       - zlib1g-dev
 
 script:
-  - cargo doc --no-deps
-  - cargo check --all
-  - cargo build --all
-  - cargo test --all
-  - cargo test --all --release
+  - cargo doc --verbose --no-deps
+  - cargo check --verbose --all
+  - cargo build --verbose --all
+  - cargo test --verbose --all
+  - cargo test --verbose --all --release
 
 after_success:
   - bash scripts/kcov.sh
