@@ -5,13 +5,11 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be copied, modified, or
 // distributed except according to those terms.
 
-//! An example usage of the matrix library.
+//! A simple neural network implementation.
 
-use reural_network::Matrix;
+pub use self::error::Error;
+pub use self::error::Result;
+pub use self::matrix::Matrix;
 
-/// The main function.
-fn main() {
-    let m = Matrix::new(2, 2);
-
-    println!("{:?}", m);
-}
+mod error;
+mod matrix;
