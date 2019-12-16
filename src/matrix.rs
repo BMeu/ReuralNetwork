@@ -74,8 +74,7 @@ mod tests {
         match error {
             Error::MatrixDimension(ref description) => {
                 assert_eq!(description, "Matrix dimensions must be > 0.")
-            }
-            _ => assert!(false, "Wrong error type."),
+            },
         }
     }
 }
