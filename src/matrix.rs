@@ -88,6 +88,7 @@ where
     ///
     /// ```
     /// use reural_network::Matrix;
+    ///
     /// let matrix: Matrix<f64> = Matrix::new(2, 3, 0.25).unwrap();
     /// ```
     ///"
@@ -136,8 +137,8 @@ where
     ///
     /// ```
     /// use reural_network::Matrix;
-    /// let data: [i32; 6] = [0, 1, 2, 3, 4, 5];
-    /// let matrix: Matrix<i32> = Matrix::from_slice(2, 3, &data).unwrap();
+    ///
+    /// let matrix: Matrix<i32> = Matrix::from_slice(2, 3, &[0, 1, 2, 3, 4, 5]).unwrap();
     /// ```
     ///
     /// This will result in the following matrix:
@@ -189,9 +190,10 @@ where
     ///
     /// ```
     /// use reural_network::Matrix;
+    ///
+    /// // Convert Celsius to Fahrenheit.
     /// let temperatures: [usize; 6] = [0, 10, 25, 50, 75, 100];
     /// let mut matrix: Matrix<usize> = Matrix::from_slice(2, 3, &temperatures).unwrap();
-    /// // Convert Celsius to Fahrenheit.
     /// matrix.map(|celsius| (celsius * 9 / 5) + 32);
     /// ```
     pub fn map<F>(&mut self, mapping: F)
