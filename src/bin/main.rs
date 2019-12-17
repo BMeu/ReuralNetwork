@@ -8,11 +8,11 @@
 //! An example usage of the matrix library.
 
 use reural_network::Matrix;
-use reural_network::Result;
 
 /// The main function.
 fn main() {
-    let matrix: Result<Matrix<usize>> = Matrix::new(2, 2, 0);
+    let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
+    let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
 
-    println!("{:?}", matrix);
+    println!("{}", matrix);
 }

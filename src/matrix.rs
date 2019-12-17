@@ -7,8 +7,12 @@
 
 //! A simple matrix library.
 
+use std::fmt::Display;
+use std::fmt::Formatter;
+
 use crate::Error;
 use crate::Result;
+use std::cmp::max;
 
 /// A matrix is a 2-dimensional structure with specific dimensions that can hold data of any type.
 ///
@@ -284,6 +288,55 @@ where
     }
 }
 
+impl<T> Display for Matrix<T>
+where
+    T: Display,
+{
+    /// Format the data in the matrix
+    fn fmt(&self, formatter: &mut Formatter) -> ::std::fmt::Result {
+        // Align all columns, but each column may have a different alignment. Thus, first iterate
+        // over the columns, then the rows, to get the width of each column from all values in the
+        // column.
+        let mut column_widths: Vec<usize> = Vec::with_capacity(self.columns);
+        for column in 0..self.columns {
+            let mut max_width: usize = 0;
+
+            // Get all values in the column.
+            for row in 0..self.rows {
+                let value: String = format!("{}", self.data[self.get_index_unchecked(row, column)]);
+                let width: usize = value.len();
+                max_width = max(max_width, width);
+            }
+
+            column_widths.push(max_width);
+        }
+
+        // Now, go through each row and format the value with the corresponding columns width.
+        let mut rows: Vec<String> = Vec::with_capacity(self.rows);
+        for row in 0..self.rows {
+            let mut row_values: Vec<String> = Vec::with_capacity(self.columns);
+
+            for (column, width) in column_widths.iter().enumerate() {
+                let value: String = format!(
+                    // Left-align all values.
+                    "{:<width$}",
+                    self.data[self.get_index_unchecked(row, column)],
+                    width = width
+                );
+
+                row_values.push(value);
+            }
+
+            // Concatenate all aligned values in the row with three spaces. Surround the values with
+            // square brackets.
+            rows.push(format!("[{}]", row_values.join("   ")));
+        }
+
+        // Concatenate all rows with a new line.
+        write!(formatter, "{}", rows.join("\n"))
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
@@ -442,5 +495,14 @@ mod tests {
         assert_eq!(transposed.rows, columns);
         assert_eq!(transposed.columns, rows);
         assert_eq!(transposed.data, vec![0, 3, 1, 4, 2, 5]);
+    }
+
+    /// Test pretty-printing the matrix.
+    #[test]
+    fn display() {
+        let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
+        let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+        let display = format!("{}", matrix);
+        assert_eq!("[0.25   1.33    -0.1]\n[1      -2.73   1.2 ]", display);
     }
 }
