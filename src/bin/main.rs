@@ -12,7 +12,7 @@ use reural_network::Result;
 
 /// The main function.
 fn main() {
-    let matrix: Result<Matrix<usize>> = Matrix::new(2, 2);
+    let matrix: Result<Matrix<usize>> = Matrix::new(2, 2, 0);
 
     println!("{:?}", matrix);
 }
