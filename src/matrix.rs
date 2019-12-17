@@ -182,6 +182,18 @@ where
     }
 
     /// Map each value in the matrix to a new value as given by the closure `mapping`.
+    ///
+    /// # Example
+    ///
+    /// Convert a matrix of temperatures in °C to °F:
+    ///
+    /// ```
+    /// use reural_network::Matrix;
+    /// let temperatures: [usize; 6] = [0, 10, 25, 50, 75, 100];
+    /// let mut matrix: Matrix<usize> = Matrix::from_slice(2, 3, &temperatures).unwrap();
+    /// // Convert Celsius to Fahrenheit.
+    /// matrix.map(|celsius| (celsius * 9 / 5) + 32);
+    /// ```
     pub fn map<F>(&mut self, mapping: F)
     where
         F: Fn(T) -> T,
@@ -334,10 +346,8 @@ mod tests {
     /// Test mapping the data in a matrix.
     #[test]
     fn map() {
-        let mut temperature: Matrix<usize> = Matrix::new(2, 3, 0).unwrap();
-
-        // Temperature in °C.
-        temperature.data = vec![0, 10, 25, 50, 75, 100];
+        let temperatures = [0, 10, 25, 50, 75, 100];
+        let mut temperature: Matrix<usize> = Matrix::from_slice(2, 3, &temperatures).unwrap();
 
         // Convert Celsius to Fahrenheit.
         temperature.map(|celsius| (celsius * 9 / 5) + 32);
