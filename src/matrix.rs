@@ -9,6 +9,7 @@
 
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::ops::Add;
 
 use crate::Error;
 use crate::Result;
@@ -136,6 +137,33 @@ where
         })
     }
 
+    /// Get the value in the given `row` and `column`.
+    ///
+    /// If the `row` or `column` value is larger than the number of rows or columns in the matrix,
+    /// respectively, an error will returned.
+    ///
+    /// If it can be guaranteed that the `row` and `column` values do not exceed the dimensions,
+    /// you can also use `get_unchecked()`.
+    pub fn get(&self, row: usize, column: usize) -> Result<T> {
+        if row >= self.rows || column >= self.columns {
+            return Err(Error::MatrixDimension("".to_owned()));
+        }
+
+        Ok(self.get_unchecked(row, column))
+    }
+
+    /// Get the value in the given `row` and `column`.
+    ///
+    /// This method does not check if the row and column parameters have valid values. If they are
+    /// greater than or equal to the dimensions of the matrix, the resulting index will be out of
+    /// bounds.
+    ///
+    /// This method should only be used if it is guaranteed by the caller that the row and column
+    /// are within the dimensions of the matrix. If this cannot be guaranteed, use `get()` instead.
+    pub fn get_unchecked(&self, row: usize, column: usize) -> T {
+        self.data[self.get_index_unchecked(row, column)]
+    }
+
     /// Convert a slice into a matrix of the given dimensions.
     ///
     /// For a matrix with `m` rows and `n` columns, the first `m` elements in the slice will become
@@ -198,6 +226,14 @@ where
 
     /// Map each value in the matrix to a new value as given by the closure `mapping`.
     ///
+    /// The `mapping` function needs three parameters:
+    ///
+    /// 1. The value of the current element.
+    /// 2. The row of the current element.
+    /// 3. The column of the current element.
+    ///
+    /// It must return the new value of the current element.
+    ///
     /// # Example
     ///
     /// Convert a matrix of temperatures in °C to °F:
@@ -208,11 +244,11 @@ where
     /// // Convert Celsius to Fahrenheit.
     /// let temperatures: [usize; 6] = [0, 10, 25, 50, 75, 100];
     /// let mut matrix: Matrix<usize> = Matrix::from_slice(2, 3, &temperatures).unwrap();
-    /// matrix.map(|celsius| (celsius * 9 / 5) + 32);
+    /// matrix.map(|celsius, _row, _column| (celsius * 9 / 5) + 32);
     /// ```
     pub fn map<F>(&mut self, mapping: F)
     where
-        F: Fn(T) -> T,
+        F: Fn(T, usize, usize) -> T,
     {
         for row in 0..self.rows {
             for column in 0..self.columns {
@@ -220,7 +256,7 @@ where
 
                 // The data vector has been created with the required size in `new()`, so we can
                 // directly access the index without having to check it for existence.
-                self.data[index] = mapping(self.data[index]);
+                self.data[index] = mapping(self.data[index], row, column);
             }
         }
     }
@@ -334,6 +370,75 @@ where
 
         // Concatenate all rows with a new line.
         write!(formatter, "{}", rows.join("\n"))
+    }
+}
+
+impl<'a> Add<f64> for &'a Matrix<f64> {
+    type Output = Matrix<f64>;
+
+    /// Add the scalar `value` to each element in the matrix.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use reural_network::Matrix;
+    ///
+    /// let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
+    /// let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+    ///
+    /// let result: Matrix<f64> = &matrix + 1f64;
+    /// assert_eq!(result.as_slice(), [1.25, 2.33, 0.9, 2.0, -1.73, 2.2]);
+    /// ```
+    ///
+    fn add(self, value: f64) -> Self::Output {
+        let mut result: Matrix<f64> = Matrix {
+            rows: self.rows,
+            columns: self.columns,
+            data: self.data.clone(),
+        };
+
+        result.map(|element, _row, _column| element + value);
+
+        result
+    }
+}
+
+impl<'a, 'b> Add<&'b Matrix<f64>> for &'a Matrix<f64> {
+    type Output = Result<Matrix<f64>>;
+
+    /// Element-wise add the `other` matrix to this matrix.
+    ///
+    /// The dimensions of both matrices must match, otherwise an error will be returned.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use reural_network::Matrix;
+    /// use reural_network::Result;
+    ///
+    /// let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
+    /// let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+    /// let other: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+    ///
+    /// let result: Result<Matrix<f64>> = &matrix + &other;
+    /// assert!(result.is_ok());
+    /// assert_eq!(result.unwrap().as_slice(), [0.5, 2.66, -0.2, 2.0, -5.46, 2.4]);
+    /// ```
+    ///
+    fn add(self, other: &'b Matrix<f64>) -> Self::Output {
+        if self.rows != other.get_rows() || self.columns != other.get_columns() {
+            return Err(Error::MatrixDimension("".to_owned()));
+        }
+
+        let mut result: Matrix<f64> = Matrix {
+            rows: self.rows,
+            columns: self.columns,
+            data: self.data.clone(),
+        };
+
+        result.map(|element, row, column| element + other.get_unchecked(row, column));
+
+        Ok(result)
     }
 }
 
@@ -477,7 +582,7 @@ mod tests {
         let mut temperature: Matrix<usize> = Matrix::from_slice(2, 3, &temperatures).unwrap();
 
         // Convert Celsius to Fahrenheit.
-        temperature.map(|celsius| (celsius * 9 / 5) + 32);
+        temperature.map(|celsius, _row, _column| (celsius * 9 / 5) + 32);
 
         // Temperature in °F.
         assert_eq!(temperature.data, vec![32, 50, 77, 122, 167, 212]);
@@ -504,5 +609,81 @@ mod tests {
         let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
         let display = format!("{}", matrix);
         assert_eq!("[0.25   1.33    -0.1]\n[1      -2.73   1.2 ]", display);
+    }
+
+    /// Test adding a scalar `f64` value to a matrix.
+    #[test]
+    fn add_scalar_f64() {
+        let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
+        let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+
+        let result: Matrix<f64> = &matrix + 1f64;
+        assert_eq!(result.data, vec![1.25, 2.33, 0.9, 2.0, -1.73, 2.2]);
+    }
+
+    /// Test adding a matrix to another matrix.
+    #[test]
+    fn add_matrix_f64() {
+        // Matching dimensions.
+        let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
+        let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+        let other: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+
+        let result: Result<Matrix<f64>> = &matrix + &other;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().data, vec![0.5, 2.66, -0.2, 2.0, -5.46, 2.4]);
+
+        // Wrong dimensions.
+        let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
+        let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+        let other: Matrix<f64> = Matrix::from_slice(3, 2, &data).unwrap();
+
+        let result: Result<Matrix<f64>> = &matrix + &other;
+        assert!(result.is_err());
+    }
+
+    /// Test getting a value when the row or column are valid.
+    #[test]
+    fn get_valid_dimensions() {
+        let data: [u64; 6] = [10, 11, 12, 13, 14, 15];
+        let matrix: Matrix<u64> = Matrix::from_slice(2, 3, &data).unwrap();
+
+        let value: Result<u64> = matrix.get(0, 0);
+        assert!(value.is_ok());
+        assert_eq!(value.unwrap(), 10);
+    }
+
+    /// Test getting a value when the row or column are invalid.
+    #[test]
+    fn get_invalid_dimensions() {
+        let data: [u64; 6] = [10, 11, 12, 13, 14, 15];
+        let matrix: Matrix<u64> = Matrix::from_slice(2, 3, &data).unwrap();
+
+        let value: Result<u64> = matrix.get(2, 5);
+        assert!(value.is_err());
+    }
+
+    /// Test getting a value without checking the row and column when the row or column are valid.
+    #[test]
+    fn get_unchecked_valid_dimensions() {
+        let data: [u64; 6] = [10, 11, 12, 13, 14, 15];
+        let matrix: Matrix<u64> = Matrix::from_slice(2, 3, &data).unwrap();
+
+        assert_eq!(matrix.get_unchecked(0, 0), 10);
+        assert_eq!(matrix.get_unchecked(0, 1), 11);
+        assert_eq!(matrix.get_unchecked(0, 2), 12);
+        assert_eq!(matrix.get_unchecked(1, 0), 13);
+        assert_eq!(matrix.get_unchecked(1, 1), 14);
+        assert_eq!(matrix.get_unchecked(1, 2), 15);
+    }
+
+    /// Test getting a value without checking the row and column when the row or column are invalid.
+    #[test]
+    #[should_panic(expected = "index out of bounds: the len is 6 but the index is 11")]
+    fn get_unchecked_invalid_dimensions() {
+        let data: [u64; 6] = [10, 11, 12, 13, 14, 15];
+        let matrix: Matrix<u64> = Matrix::from_slice(2, 3, &data).unwrap();
+
+        let _: u64 = matrix.get_unchecked(2, 5);
     }
 }
