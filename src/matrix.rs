@@ -462,7 +462,7 @@ mod tests {
         let matrix: Matrix<usize> = matrix_result.unwrap();
         assert_eq!(matrix.rows, rows);
         assert_eq!(matrix.columns, columns);
-        assert_eq!(matrix.data, [0usize; 15].to_vec());
+        assert_eq!(matrix.as_slice(), [0usize; 15]);
 
         // Invalid dimensions.
         let rows: usize = 0;
@@ -506,7 +506,7 @@ mod tests {
         let matrix: Matrix<usize> = matrix_result.unwrap();
         assert_eq!(matrix.rows, rows);
         assert_eq!(matrix.columns, columns);
-        assert_eq!(matrix.data, data.to_vec());
+        assert_eq!(matrix.as_slice(), data);
 
         // Invalid dimensions.
         let rows: usize = 0;
@@ -587,7 +587,7 @@ mod tests {
         temperature.map(|celsius, _row, _column| (celsius * 9 / 5) + 32);
 
         // Temperature in °F.
-        assert_eq!(temperature.data, vec![32, 50, 77, 122, 167, 212]);
+        assert_eq!(temperature.as_slice(), [32, 50, 77, 122, 167, 212]);
     }
 
     /// Test transposing a matrix.
@@ -601,7 +601,7 @@ mod tests {
 
         assert_eq!(transposed.rows, columns);
         assert_eq!(transposed.columns, rows);
-        assert_eq!(transposed.data, vec![0, 3, 1, 4, 2, 5]);
+        assert_eq!(transposed.as_slice(), [0, 3, 1, 4, 2, 5]);
     }
 
     /// Test pretty-printing the matrix.
@@ -620,7 +620,7 @@ mod tests {
         let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
 
         let result: Matrix<f64> = &matrix + 1f64;
-        assert_eq!(result.data, vec![1.25, 2.33, 0.9, 2.0, -1.73, 2.2]);
+        assert_eq!(result.as_slice(), [1.25, 2.33, 0.9, 2.0, -1.73, 2.2]);
     }
 
     /// Test adding a matrix to another matrix.
@@ -633,7 +633,10 @@ mod tests {
 
         let result: Result<Matrix<f64>> = &matrix + &other;
         assert!(result.is_ok());
-        assert_eq!(result.unwrap().data, vec![0.5, 2.66, -0.2, 2.0, -5.46, 2.4]);
+        assert_eq!(
+            result.unwrap().as_slice(),
+            [0.5, 2.66, -0.2, 2.0, -5.46, 2.4]
+        );
 
         // Wrong dimensions.
         let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
