@@ -45,6 +45,31 @@ impl<T> Matrix<T> {
     fn get_index_unchecked(&self, row: usize, column: usize) -> usize {
         self.columns * row + column
     }
+
+    /// Get the data of the matrix as a 1-dimensional slice.
+    ///
+    /// For a matrix with `m` rows and `n` columns, the first row of the matrix will become the
+    /// first `m` elements in the slice, the second row will become the second `m` elements and so
+    /// on.
+    ///
+    /// # Example
+    ///
+    /// The following matrix
+    ///
+    /// ```text
+    /// [0 1 2]
+    /// [3 4 5]
+    /// ```
+    ///
+    /// will result in the slice:
+    ///
+    /// ```
+    /// let data = [0, 1, 2, 3, 4, 5];
+    /// ```
+    ///
+    pub fn as_slice(&self) -> &[T] {
+        self.data.as_slice()
+    }
 }
 
 impl<T> Matrix<T>
@@ -65,7 +90,7 @@ where
     /// use reural_network::Matrix;
     /// let matrix: Matrix<f64> = Matrix::new(2, 3, 0.25).unwrap();
     /// ```
-    ///
+    ///"
     pub fn new(rows: usize, columns: usize, default: T) -> Result<Matrix<T>> {
         // The dimensional values must not be 0.
         if rows == 0 || columns == 0 {
@@ -76,7 +101,7 @@ where
 
         // The size of the data vector cannot be larger than the maximum usize.
         let length: usize = match rows.checked_mul(columns) {
-            Some(capacity) => capacity,
+            Some(length) => length,
             None => {
                 return Err(Error::MatrixDimension(
                     "The product of rows and columns must not exceed std::usize::MAX.".to_owned(),
@@ -93,6 +118,66 @@ where
             rows,
             columns,
             data,
+        })
+    }
+
+    /// Convert a slice into a matrix of the given dimensions.
+    ///
+    /// For a matrix with `m` rows and `n` columns, the first `m` elements in the slice will become
+    /// the first row in the matrix, the second `m` elements will become the second row and so on.
+    ///
+    /// The number of rows or the number of columns must be greater than zero and their product must
+    /// not exceed the maximum `usize` value, `::std::usize::MAX`. Furthermore, the product must be
+    /// equal to the length of the given data slice.
+    ///
+    /// # Example
+    ///
+    /// A `2x3` matrix can be created from a slice of length `6` with the following lines of code:
+    ///
+    /// ```
+    /// use reural_network::Matrix;
+    /// let data: [i32; 6] = [0, 1, 2, 3, 4, 5];
+    /// let matrix: Matrix<i32> = Matrix::from_slice(2, 3, &data).unwrap();
+    /// ```
+    ///
+    /// This will result in the following matrix:
+    ///
+    /// ```text
+    /// [0 1 2]
+    /// [3 4 5]
+    /// ```
+    ///
+    pub fn from_slice(rows: usize, columns: usize, data: &[T]) -> Result<Matrix<T>> {
+        // The dimensional values must not be 0.
+        if rows == 0 || columns == 0 {
+            return Err(Error::MatrixDimension(
+                "Matrix dimensions must be > 0.".to_owned(),
+            ));
+        }
+
+        // The size of the data vector cannot be larger than the maximum usize.
+        let length: usize = match rows.checked_mul(columns) {
+            Some(length) => length,
+            None => {
+                return Err(Error::MatrixDimension(
+                    "The product of rows and columns must not exceed std::usize::MAX.".to_owned(),
+                ))
+            }
+        };
+
+        // Check that the length of the data slice matches the dimensions of the matrix.
+        if length != data.len() {
+            return Err(Error::MatrixDimension(
+                "The length of the data slice must be equal to the product of rows and columns."
+                    .to_owned(),
+            ));
+        }
+
+        // Return the matrix.
+        Ok(Matrix {
+            rows,
+            columns,
+            data: data.to_vec(),
         })
     }
 
@@ -157,6 +242,65 @@ mod tests {
             Error::MatrixDimension(ref description) => assert_eq!(
                 description,
                 "The product of rows and columns must not exceed std::usize::MAX."
+            ),
+        }
+    }
+
+    /// Test creating a new matrix from a slice.
+    #[test]
+    fn from_slice() {
+        // Valid dimensions.
+        let rows: usize = 5;
+        let columns: usize = 3;
+        let data: [usize; 15] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+        let matrix_result: Result<Matrix<usize>> = Matrix::from_slice(rows, columns, &data);
+
+        assert!(matrix_result.is_ok());
+
+        let matrix: Matrix<usize> = matrix_result.unwrap();
+        assert_eq!(matrix.rows, rows);
+        assert_eq!(matrix.columns, columns);
+        assert_eq!(matrix.data, data.to_vec());
+
+        // Invalid dimensions.
+        let rows: usize = 0;
+        let matrix_result: Result<Matrix<usize>> = Matrix::from_slice(rows, columns, &data);
+
+        assert!(matrix_result.is_err());
+
+        let error = matrix_result.unwrap_err();
+        match error {
+            Error::MatrixDimension(ref description) => {
+                assert_eq!(description, "Matrix dimensions must be > 0.")
+            }
+        }
+
+        // Too large dimensions.
+        let rows: usize = ::std::usize::MAX;
+        let columns: usize = 2;
+        let matrix_result: Result<Matrix<usize>> = Matrix::from_slice(rows, columns, &data);
+
+        assert!(matrix_result.is_err());
+        let error = matrix_result.unwrap_err();
+        match error {
+            Error::MatrixDimension(ref description) => assert_eq!(
+                description,
+                "The product of rows and columns must not exceed std::usize::MAX."
+            ),
+        }
+
+        // Dimension mismatch with data vector.
+        let rows: usize = 5;
+        let columns: usize = 3;
+        let data: [usize; 5] = [0, 1, 2, 3, 4];
+        let matrix_result: Result<Matrix<usize>> = Matrix::from_slice(rows, columns, &data);
+
+        assert!(matrix_result.is_err());
+        let error = matrix_result.unwrap_err();
+        match error {
+            Error::MatrixDimension(ref description) => assert_eq!(
+                description,
+                "The length of the data slice must be equal to the product of rows and columns."
             ),
         }
     }
