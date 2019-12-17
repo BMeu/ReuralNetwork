@@ -23,10 +23,10 @@ use crate::Result;
 #[derive(Debug)]
 pub struct Matrix<T> {
     /// The number of rows.
-    pub rows: usize,
+    rows: usize,
 
     /// The number of columns.
-    pub columns: usize,
+    columns: usize,
 
     /// The actual data of the matrix as a 1-dimensional array.
     data: Vec<T>,
@@ -69,6 +69,16 @@ impl<T> Matrix<T> {
     ///
     pub fn as_slice(&self) -> &[T] {
         self.data.as_slice()
+    }
+
+    /// Get the number of rows in the matrix.
+    pub fn get_rows(&self) -> usize {
+        self.rows
+    }
+
+    /// Get the number of columns in the matrix.
+    pub fn get_columns(&self) -> usize {
+        self.columns
     }
 }
 
@@ -238,8 +248,8 @@ where
     /// let matrix: Matrix<usize> = Matrix::from_slice(2, 3, &[0, 1, 2, 3, 4, 5]).unwrap();
     /// let transposed: Matrix<usize> = matrix.transpose();
     ///
-    /// assert_eq!(transposed.rows, 3);
-    /// assert_eq!(transposed.columns, 2);
+    /// assert_eq!(transposed.get_rows(), 3);
+    /// assert_eq!(transposed.get_columns(), 2);
     /// assert_eq!(transposed.as_slice(), &[0, 3, 1, 4, 2, 5]);
     /// ```
     pub fn transpose(&self) -> Matrix<T> {
