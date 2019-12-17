@@ -33,7 +33,8 @@ pub struct Matrix<T> {
 }
 
 impl<T> Matrix<T> {
-    /// Get the index in the 1-dimensional vector for the element in row `row` and column `column`.
+    /// Get the index in the 1-dimensional data vector for the element in row `row` and column
+    /// `column`.
     ///
     /// This method does not check if the row and column parameters have valid values. If they are
     /// greater than or equal to the dimensions of the matrix, the resulting index will be out of
