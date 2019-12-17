@@ -292,7 +292,7 @@ impl<T> Display for Matrix<T>
 where
     T: Display,
 {
-    /// Format the data in the matrix
+    /// Format the data in the matrix.
     fn fmt(&self, formatter: &mut Formatter) -> ::std::fmt::Result {
         // Align all columns, but each column may have a different alignment. Thus, first iterate
         // over the columns, then the rows, to get the width of each column from all values in the
