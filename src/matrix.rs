@@ -312,7 +312,7 @@ where
 
             // Rows and columns are switched in the transposed matrix, so consider this when getting
             // the index for the original data.
-            let value: T = self.data[self.get_index_unchecked(column, row)];
+            let value: T = self.get_unchecked(column, row);
             data.push(value);
         }
 
@@ -339,6 +339,7 @@ where
 
             // Get all values in the column.
             for row in 0..self.rows {
+                // Do not use self.get_unchecked() here as this requires Copy for T.
                 let value: String = format!("{}", self.data[self.get_index_unchecked(row, column)]);
                 let width: usize = value.len();
                 max_width = max(max_width, width);
@@ -356,6 +357,7 @@ where
                 let value: String = format!(
                     // Left-align all values.
                     "{:<width$}",
+                    // Do not use self.get_unchecked() here as this requires Copy for T.
                     self.data[self.get_index_unchecked(row, column)],
                     width = width
                 );
