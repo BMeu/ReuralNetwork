@@ -23,10 +23,10 @@ use crate::Result;
 #[derive(Debug)]
 pub struct Matrix<T> {
     /// The number of rows.
-    rows: usize,
+    pub rows: usize,
 
     /// The number of columns.
-    columns: usize,
+    pub columns: usize,
 
     /// The actual data of the matrix as a 1-dimensional array.
     data: Vec<T>,
@@ -208,6 +208,68 @@ where
             }
         }
     }
+
+    /// Transpose this matrix.
+    ///
+    /// # Example
+    ///
+    /// A `2x3` matrix
+    ///
+    /// ```text
+    /// [0 1 2]
+    /// [3 4 5]
+    /// ```
+    ///
+    /// will become a `3x2` matrix:
+    ///
+    /// ```text
+    /// [0 3]
+    /// [1 4]
+    /// [2 5]
+    /// ```
+    ///
+    /// In code, this will look as follows:
+    ///
+    /// ```
+    /// use reural_network::Matrix;
+    ///
+    /// let matrix: Matrix<usize> = Matrix::from_slice(2, 3, &[0, 1, 2, 3, 4, 5]).unwrap();
+    /// let transposed: Matrix<usize> = matrix.transpose();
+    ///
+    /// assert_eq!(transposed.rows, 3);
+    /// assert_eq!(transposed.columns, 2);
+    /// assert_eq!(transposed.as_slice(), &[0, 3, 1, 4, 2, 5]);
+    /// ```
+    pub fn transpose(&self) -> Matrix<T> {
+        // The rows and columns are switched in the transposed matrix.
+        let rows: usize = self.columns;
+        let columns: usize = self.rows;
+
+        // Allocate the required memory at once. This is faster than having to resize the vector
+        // every few insertions.
+        let length: usize = rows * columns;
+        let mut data: Vec<T> = Vec::with_capacity(length);
+        for index in 0..length {
+            // Basically, iterate over the new data vector (which is still empty).
+            // At every index of the new vector, find the corresponding value from the original
+            // matrix based on the index.
+
+            // Get row and column for this index in the transposed matrix.
+            let row: usize = index / columns;
+            let column: usize = index % columns;
+
+            // Rows and columns are switched in the transposed matrix, so consider this when getting
+            // the index for the original data.
+            let value: T = self.data[self.get_index_unchecked(column, row)];
+            data.push(value);
+        }
+
+        Matrix {
+            rows: self.columns,
+            columns: self.rows,
+            data,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -354,5 +416,19 @@ mod tests {
 
         // Temperature in °F.
         assert_eq!(temperature.data, vec![32, 50, 77, 122, 167, 212]);
+    }
+
+    /// Test transposing a matrix.
+    #[test]
+    fn transpose() {
+        let rows: usize = 2;
+        let columns: usize = 3;
+        let data: [usize; 6] = [0, 1, 2, 3, 4, 5];
+        let matrix: Matrix<usize> = Matrix::from_slice(rows, columns, &data).unwrap();
+        let transposed: Matrix<usize> = matrix.transpose();
+
+        assert_eq!(transposed.rows, columns);
+        assert_eq!(transposed.columns, rows);
+        assert_eq!(transposed.data, vec![0, 3, 1, 4, 2, 5]);
     }
 }
