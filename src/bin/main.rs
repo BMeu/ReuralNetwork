@@ -7,12 +7,16 @@
 
 //! An example usage of the matrix library.
 
+use std::num::NonZeroUsize;
+
 use reural_network::Matrix;
 
 /// The main function.
 fn main() {
+    let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+    let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
     let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-    let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+    let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
 
     println!("{}", matrix);
 }

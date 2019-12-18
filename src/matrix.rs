@@ -9,6 +9,7 @@
 
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::num::NonZeroUsize;
 use std::ops::Add;
 
 use crate::Error;
@@ -102,21 +103,20 @@ where
     /// following line of code:
     ///
     /// ```
+    /// use std::num::NonZeroUsize;
     /// use reural_network::Matrix;
     ///
-    /// let matrix: Matrix<f64> = Matrix::new(2, 3, 0.25).unwrap();
+    /// let rows = NonZeroUsize::new(2).unwrap();
+    /// let columns = NonZeroUsize::new(3).unwrap();
+    /// let matrix: Matrix<f64> = Matrix::new(rows, columns, 0.25).unwrap();
     /// ```
     ///"
-    pub fn new(rows: usize, columns: usize, default: T) -> Result<Matrix<T>> {
-        // The dimensional values must not be 0.
-        if rows == 0 || columns == 0 {
-            return Err(Error::MatrixDimension(
-                "Matrix dimensions must be > 0.".to_owned(),
-            ));
-        }
+    pub fn new(rows: NonZeroUsize, columns: NonZeroUsize, default: T) -> Result<Matrix<T>> {
+        let num_rows: usize = rows.get();
+        let num_columns: usize = columns.get();
 
         // The size of the data vector cannot be larger than the maximum usize.
-        let length: usize = match rows.checked_mul(columns) {
+        let length: usize = match num_rows.checked_mul(num_columns) {
             Some(length) => length,
             None => {
                 return Err(Error::MatrixDimension(
@@ -131,8 +131,8 @@ where
 
         // Return the matrix.
         Ok(Matrix {
-            rows,
-            columns,
+            rows: num_rows,
+            columns: num_columns,
             data,
         })
     }
@@ -178,9 +178,12 @@ where
     /// A `2x3` matrix can be created from a slice of length `6` with the following lines of code:
     ///
     /// ```
+    /// use std::num::NonZeroUsize;
     /// use reural_network::Matrix;
     ///
-    /// let matrix: Matrix<i32> = Matrix::from_slice(2, 3, &[0, 1, 2, 3, 4, 5]).unwrap();
+    /// let rows = NonZeroUsize::new(2).unwrap();
+    /// let columns = NonZeroUsize::new(3).unwrap();
+    /// let matrix: Matrix<i32> = Matrix::from_slice(rows, columns, &[0, 1, 2, 3, 4, 5]).unwrap();
     /// ```
     ///
     /// This will result in the following matrix:
@@ -190,16 +193,12 @@ where
     /// [3 4 5]
     /// ```
     ///
-    pub fn from_slice(rows: usize, columns: usize, data: &[T]) -> Result<Matrix<T>> {
-        // The dimensional values must not be 0.
-        if rows == 0 || columns == 0 {
-            return Err(Error::MatrixDimension(
-                "Matrix dimensions must be > 0.".to_owned(),
-            ));
-        }
+    pub fn from_slice(rows: NonZeroUsize, columns: NonZeroUsize, data: &[T]) -> Result<Matrix<T>> {
+        let num_rows: usize = rows.get();
+        let num_columns: usize = columns.get();
 
         // The size of the data vector cannot be larger than the maximum usize.
-        let length: usize = match rows.checked_mul(columns) {
+        let length: usize = match num_rows.checked_mul(num_columns) {
             Some(length) => length,
             None => {
                 return Err(Error::MatrixDimension(
@@ -218,8 +217,8 @@ where
 
         // Return the matrix.
         Ok(Matrix {
-            rows,
-            columns,
+            rows: num_rows,
+            columns: num_columns,
             data: data.to_vec(),
         })
     }
@@ -239,11 +238,14 @@ where
     /// Convert a matrix of temperatures in °C to °F:
     ///
     /// ```
+    /// use std::num::NonZeroUsize;
     /// use reural_network::Matrix;
     ///
     /// // Convert Celsius to Fahrenheit.
+    /// let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+    /// let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
     /// let temperatures: [usize; 6] = [0, 10, 25, 50, 75, 100];
-    /// let mut matrix: Matrix<usize> = Matrix::from_slice(2, 3, &temperatures).unwrap();
+    /// let mut matrix: Matrix<usize> = Matrix::from_slice(rows, columns, &temperatures).unwrap();
     /// matrix.map(|celsius, _row, _column| (celsius * 9 / 5) + 32);
     /// ```
     pub fn map<F>(&mut self, mapping: F)
@@ -283,9 +285,12 @@ where
     /// In code, this will look as follows:
     ///
     /// ```
+    /// use std::num::NonZeroUsize;
     /// use reural_network::Matrix;
     ///
-    /// let matrix: Matrix<usize> = Matrix::from_slice(2, 3, &[0, 1, 2, 3, 4, 5]).unwrap();
+    /// let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+    /// let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
+    /// let matrix: Matrix<usize> = Matrix::from_slice(rows, columns, &[0, 1, 2, 3, 4, 5]).unwrap();
     /// let transposed: Matrix<usize> = matrix.transpose();
     ///
     /// assert_eq!(transposed.get_rows(), 3);
@@ -383,10 +388,13 @@ impl<'a> Add<f64> for &'a Matrix<f64> {
     /// # Example
     ///
     /// ```
+    /// use std::num::NonZeroUsize;
     /// use reural_network::Matrix;
     ///
+    /// let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+    /// let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
     /// let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-    /// let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+    /// let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
     ///
     /// let result: Matrix<f64> = &matrix + 1f64;
     /// assert_eq!(result.as_slice(), [1.25, 2.33, 0.9, 2.0, -1.73, 2.2]);
@@ -415,12 +423,15 @@ impl<'a, 'b> Add<&'b Matrix<f64>> for &'a Matrix<f64> {
     /// # Example
     ///
     /// ```
+    /// use std::num::NonZeroUsize;
     /// use reural_network::Matrix;
     /// use reural_network::Result;
     ///
+    /// let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+    /// let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
     /// let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-    /// let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
-    /// let other: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+    /// let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
+    /// let other: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
     ///
     /// let result: Result<Matrix<f64>> = &matrix + &other;
     /// assert!(result.is_ok());
@@ -453,33 +464,20 @@ mod tests {
     #[test]
     fn new() {
         // Valid dimensions.
-        let rows: usize = 5;
-        let columns: usize = 3;
+        let rows: NonZeroUsize = NonZeroUsize::new(5).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let matrix_result: Result<Matrix<usize>> = Matrix::new(rows, columns, 0);
 
         assert!(matrix_result.is_ok());
 
         let matrix: Matrix<usize> = matrix_result.unwrap();
-        assert_eq!(matrix.rows, rows);
-        assert_eq!(matrix.columns, columns);
+        assert_eq!(matrix.rows, rows.get());
+        assert_eq!(matrix.columns, columns.get());
         assert_eq!(matrix.as_slice(), [0usize; 15]);
 
-        // Invalid dimensions.
-        let rows: usize = 0;
-        let matrix_result: Result<Matrix<usize>> = Matrix::new(rows, columns, 0);
-
-        assert!(matrix_result.is_err());
-
-        let error = matrix_result.unwrap_err();
-        match error {
-            Error::MatrixDimension(ref description) => {
-                assert_eq!(description, "Matrix dimensions must be > 0.")
-            }
-        }
-
         // Too large dimensions.
-        let rows: usize = ::std::usize::MAX;
-        let columns: usize = 2;
+        let rows: NonZeroUsize = NonZeroUsize::new(::std::usize::MAX).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(2).unwrap();
         let matrix_result: Result<Matrix<usize>> = Matrix::new(rows, columns, 0);
 
         assert!(matrix_result.is_err());
@@ -496,34 +494,21 @@ mod tests {
     #[test]
     fn from_slice() {
         // Valid dimensions.
-        let rows: usize = 5;
-        let columns: usize = 3;
+        let rows: NonZeroUsize = NonZeroUsize::new(5).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let data: [usize; 15] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
         let matrix_result: Result<Matrix<usize>> = Matrix::from_slice(rows, columns, &data);
 
         assert!(matrix_result.is_ok());
 
         let matrix: Matrix<usize> = matrix_result.unwrap();
-        assert_eq!(matrix.rows, rows);
-        assert_eq!(matrix.columns, columns);
+        assert_eq!(matrix.rows, rows.get());
+        assert_eq!(matrix.columns, columns.get());
         assert_eq!(matrix.as_slice(), data);
 
-        // Invalid dimensions.
-        let rows: usize = 0;
-        let matrix_result: Result<Matrix<usize>> = Matrix::from_slice(rows, columns, &data);
-
-        assert!(matrix_result.is_err());
-
-        let error = matrix_result.unwrap_err();
-        match error {
-            Error::MatrixDimension(ref description) => {
-                assert_eq!(description, "Matrix dimensions must be > 0.")
-            }
-        }
-
         // Too large dimensions.
-        let rows: usize = ::std::usize::MAX;
-        let columns: usize = 2;
+        let rows: NonZeroUsize = NonZeroUsize::new(::std::usize::MAX).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(2).unwrap();
         let matrix_result: Result<Matrix<usize>> = Matrix::from_slice(rows, columns, &data);
 
         assert!(matrix_result.is_err());
@@ -536,8 +521,8 @@ mod tests {
         }
 
         // Dimension mismatch with data vector.
-        let rows: usize = 5;
-        let columns: usize = 3;
+        let rows: NonZeroUsize = NonZeroUsize::new(5).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let data: [usize; 5] = [0, 1, 2, 3, 4];
         let matrix_result: Result<Matrix<usize>> = Matrix::from_slice(rows, columns, &data);
 
@@ -554,8 +539,8 @@ mod tests {
     /// Test getting the unchecked index for given rows and columns.
     #[test]
     fn get_index_unchecked() {
-        let rows: usize = 10;
-        let columns: usize = 10;
+        let rows: NonZeroUsize = NonZeroUsize::new(10).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(10).unwrap();
         let matrix: Matrix<usize> = Matrix::new(rows, columns, 0).unwrap();
 
         // (0, 0) => 0
@@ -581,7 +566,10 @@ mod tests {
     #[test]
     fn map() {
         let temperatures = [0, 10, 25, 50, 75, 100];
-        let mut temperature: Matrix<usize> = Matrix::from_slice(2, 3, &temperatures).unwrap();
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
+        let mut temperature: Matrix<usize> =
+            Matrix::from_slice(rows, columns, &temperatures).unwrap();
 
         // Convert Celsius to Fahrenheit.
         temperature.map(|celsius, _row, _column| (celsius * 9 / 5) + 32);
@@ -593,22 +581,24 @@ mod tests {
     /// Test transposing a matrix.
     #[test]
     fn transpose() {
-        let rows: usize = 2;
-        let columns: usize = 3;
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let data: [usize; 6] = [0, 1, 2, 3, 4, 5];
         let matrix: Matrix<usize> = Matrix::from_slice(rows, columns, &data).unwrap();
         let transposed: Matrix<usize> = matrix.transpose();
 
-        assert_eq!(transposed.rows, columns);
-        assert_eq!(transposed.columns, rows);
+        assert_eq!(transposed.rows, columns.get());
+        assert_eq!(transposed.columns, rows.get());
         assert_eq!(transposed.as_slice(), [0, 3, 1, 4, 2, 5]);
     }
 
     /// Test pretty-printing the matrix.
     #[test]
     fn display() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-        let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+        let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
         let display = format!("{}", matrix);
         assert_eq!("[0.25   1.33    -0.1]\n[1      -2.73   1.2 ]", display);
     }
@@ -616,8 +606,10 @@ mod tests {
     /// Test adding a scalar `f64` value to a matrix.
     #[test]
     fn add_scalar_f64() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-        let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+        let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
 
         let result: Matrix<f64> = &matrix + 1f64;
         assert_eq!(result.as_slice(), [1.25, 2.33, 0.9, 2.0, -1.73, 2.2]);
@@ -627,9 +619,11 @@ mod tests {
     #[test]
     fn add_matrix_f64() {
         // Matching dimensions.
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-        let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
-        let other: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
+        let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
+        let other: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
 
         let result: Result<Matrix<f64>> = &matrix + &other;
         assert!(result.is_ok());
@@ -639,9 +633,11 @@ mod tests {
         );
 
         // Wrong dimensions.
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-        let matrix: Matrix<f64> = Matrix::from_slice(2, 3, &data).unwrap();
-        let other: Matrix<f64> = Matrix::from_slice(3, 2, &data).unwrap();
+        let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
+        let other: Matrix<f64> = Matrix::from_slice(columns, rows, &data).unwrap();
 
         let result: Result<Matrix<f64>> = &matrix + &other;
         assert!(result.is_err());
@@ -650,8 +646,10 @@ mod tests {
     /// Test getting a value when the row or column are valid.
     #[test]
     fn get_valid_dimensions() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let data: [u64; 6] = [10, 11, 12, 13, 14, 15];
-        let matrix: Matrix<u64> = Matrix::from_slice(2, 3, &data).unwrap();
+        let matrix: Matrix<u64> = Matrix::from_slice(rows, columns, &data).unwrap();
 
         let value: Result<u64> = matrix.get(0, 0);
         assert!(value.is_ok());
@@ -661,8 +659,10 @@ mod tests {
     /// Test getting a value when the row or column are invalid.
     #[test]
     fn get_invalid_dimensions() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let data: [u64; 6] = [10, 11, 12, 13, 14, 15];
-        let matrix: Matrix<u64> = Matrix::from_slice(2, 3, &data).unwrap();
+        let matrix: Matrix<u64> = Matrix::from_slice(rows, columns, &data).unwrap();
 
         let value: Result<u64> = matrix.get(2, 5);
         assert!(value.is_err());
@@ -671,8 +671,10 @@ mod tests {
     /// Test getting a value without checking the row and column when the row or column are valid.
     #[test]
     fn get_unchecked_valid_dimensions() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let data: [u64; 6] = [10, 11, 12, 13, 14, 15];
-        let matrix: Matrix<u64> = Matrix::from_slice(2, 3, &data).unwrap();
+        let matrix: Matrix<u64> = Matrix::from_slice(rows, columns, &data).unwrap();
 
         assert_eq!(matrix.get_unchecked(0, 0), 10);
         assert_eq!(matrix.get_unchecked(0, 1), 11);
@@ -686,8 +688,10 @@ mod tests {
     #[test]
     #[should_panic(expected = "index out of bounds: the len is 6 but the index is 11")]
     fn get_unchecked_invalid_dimensions() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
         let data: [u64; 6] = [10, 11, 12, 13, 14, 15];
-        let matrix: Matrix<u64> = Matrix::from_slice(2, 3, &data).unwrap();
+        let matrix: Matrix<u64> = Matrix::from_slice(rows, columns, &data).unwrap();
 
         let _: u64 = matrix.get_unchecked(2, 5);
     }
