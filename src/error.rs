@@ -15,6 +15,7 @@ use std::result;
 pub type Result<T> = result::Result<T, Error>;
 
 /// A wrapper type for all errors caused by this crate.
+#[non_exhaustive]
 #[derive(Debug)]
 pub enum Error {
     /// Errors caused if the dimensions of a matrix are invalid.
