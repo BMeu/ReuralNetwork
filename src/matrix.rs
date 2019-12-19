@@ -110,7 +110,13 @@ impl<T> Matrix<T> {
     ///
     /// This method should only be used if it is guaranteed by the caller that the row and column
     /// are within the dimensions of the matrix.
-    fn get_index_unchecked(&self, row: usize, column: usize) -> usize {
+    ///
+    /// # Safety
+    ///
+    /// If the row or column are out of bounds of the matrix, the computed index for the internal
+    /// data structure will be out of bounds. Using this index without any further checks to access
+    /// data in the data structure will cause a panic.
+    unsafe fn get_index_unchecked(&self, row: usize, column: usize) -> usize {
         self.columns * row + column
     }
 
@@ -252,7 +258,7 @@ where
             return Err(Error::CellOutOfBounds);
         }
 
-        Ok(self.get_unchecked(row, column))
+        unsafe { Ok(self.get_unchecked(row, column)) }
     }
 
     /// Get the value in the given `row` and `column`.
@@ -264,8 +270,13 @@ where
     /// This method should only be used if it is guaranteed by the caller that the row and column
     /// are within the dimensions of the matrix. If this cannot be guaranteed, use [`get`] instead.
     ///
+    /// # Safety
+    ///
+    /// If the row or column are out of bounds of this matrix, an invalid index in the internal
+    /// data structure will be accessed. This will cause the method to panic.
+    ///
     /// [`get`]: #method.get
-    pub fn get_unchecked(&self, row: usize, column: usize) -> T {
+    pub unsafe fn get_unchecked(&self, row: usize, column: usize) -> T {
         self.data[self.get_index_unchecked(row, column)]
     }
 
@@ -306,11 +317,12 @@ where
     {
         for row in 0..self.rows {
             for column in 0..self.columns {
-                let index: usize = self.get_index_unchecked(row, column);
-
-                // The data vector has been created with the required size in `new()`, so we can
-                // directly access the index without having to check it for existence.
-                self.data[index] = mapping(self.data[index], row, column);
+                unsafe {
+                    // Since we iterate over all rows and columns, they are always valid and we
+                    // don't have to check any invariants.
+                    let index: usize = self.get_index_unchecked(row, column);
+                    self.data[index] = mapping(self.data[index], row, column);
+                }
             }
         }
     }
@@ -369,8 +381,12 @@ where
 
             // Rows and columns are switched in the transposed matrix, so consider this when getting
             // the index for the original data.
-            let value: T = self.get_unchecked(column, row);
-            data.push(value);
+            unsafe {
+                // Since we iterate over the vector and compute the row and column from this index,
+                // the values are always valid.
+                let value: T = self.get_unchecked(column, row);
+                data.push(value);
+            }
         }
 
         Matrix {
@@ -424,8 +440,12 @@ where
             let mut max_width: usize = 0;
             for row in 0..self.rows {
                 // Do not use self.get_unchecked() here as this requires T to implement Copy.
-                let value: String = format!("{}", self.data[self.get_index_unchecked(row, column)]);
-                max_width = max(max_width, value.len());
+                unsafe {
+                    // We iterate over the rows and columns and thus, they are always valid.
+                    let value: String =
+                        format!("{}", self.data[self.get_index_unchecked(row, column)]);
+                    max_width = max(max_width, value.len());
+                }
             }
 
             // Remember the current column's width.
@@ -438,14 +458,18 @@ where
             // For each row, collect the formatted values first.
             let mut row_values: Vec<String> = Vec::with_capacity(self.columns);
             for (column, width) in column_widths.iter().enumerate() {
-                let value: String = format!(
-                    "{:<width$}", // Left-align all values.
-                    // Do not use self.get_unchecked() here as this requires T to implement Copy.
-                    self.data[self.get_index_unchecked(row, column)],
-                    width = width
-                );
+                unsafe {
+                    // We iterate over the rows and columns and thus, they are always valid.
+                    let value: String = format!(
+                        "{:<width$}", // Left-align all values.
+                        // Do not use self.get_unchecked() here as this requires T to implement
+                        // Copy.
+                        self.data[self.get_index_unchecked(row, column)],
+                        width = width
+                    );
 
-                row_values.push(value);
+                    row_values.push(value);
+                }
             }
 
             // Concatenate all aligned values in the row with three spaces. Surround the values with
@@ -529,7 +553,8 @@ impl<'a, 'b> Add<&'b Matrix<f64>> for &'a Matrix<f64> {
             data: self.data.clone(),
         };
 
-        result.map(|element, row, column| element + other.get_unchecked(row, column));
+        // The row and column are given by the map method and are thus valid.
+        result.map(|element, row, column| unsafe { element + other.get_unchecked(row, column) });
 
         Ok(result)
     }
@@ -673,23 +698,25 @@ mod tests {
         let columns: NonZeroUsize = NonZeroUsize::new(10).unwrap();
         let matrix: Matrix<usize> = Matrix::new(rows, columns, 0).unwrap();
 
-        // (0, 0) => 0
-        assert_eq!(matrix.get_index_unchecked(0, 0), 0);
+        unsafe {
+            // (0, 0) => 0
+            assert_eq!(matrix.get_index_unchecked(0, 0), 0);
 
-        // (0, 1) => 1
-        assert_eq!(matrix.get_index_unchecked(0, 1), 1);
+            // (0, 1) => 1
+            assert_eq!(matrix.get_index_unchecked(0, 1), 1);
 
-        // (1, 0) => 10
-        assert_eq!(matrix.get_index_unchecked(1, 0), 10);
+            // (1, 0) => 10
+            assert_eq!(matrix.get_index_unchecked(1, 0), 10);
 
-        // (3, 7) => 37
-        assert_eq!(matrix.get_index_unchecked(3, 7), 37);
+            // (3, 7) => 37
+            assert_eq!(matrix.get_index_unchecked(3, 7), 37);
 
-        // (9, 9) => 99
-        assert_eq!(matrix.get_index_unchecked(9, 9), 99);
+            // (9, 9) => 99
+            assert_eq!(matrix.get_index_unchecked(9, 9), 99);
 
-        // (10, 0) => 100 (out of bounds)
-        assert_eq!(matrix.get_index_unchecked(10, 0), 100);
+            // (10, 0) => 100 (out of bounds)
+            assert_eq!(matrix.get_index_unchecked(10, 0), 100);
+        }
     }
 
     /// Test getting the length of the data vector based on the number of rows and columns in the
@@ -813,12 +840,14 @@ mod tests {
         let data: [u64; 6] = [10, 11, 12, 13, 14, 15];
         let matrix: Matrix<u64> = Matrix::from_slice(rows, columns, &data).unwrap();
 
-        assert_eq!(matrix.get_unchecked(0, 0), 10);
-        assert_eq!(matrix.get_unchecked(0, 1), 11);
-        assert_eq!(matrix.get_unchecked(0, 2), 12);
-        assert_eq!(matrix.get_unchecked(1, 0), 13);
-        assert_eq!(matrix.get_unchecked(1, 1), 14);
-        assert_eq!(matrix.get_unchecked(1, 2), 15);
+        unsafe {
+            assert_eq!(matrix.get_unchecked(0, 0), 10);
+            assert_eq!(matrix.get_unchecked(0, 1), 11);
+            assert_eq!(matrix.get_unchecked(0, 2), 12);
+            assert_eq!(matrix.get_unchecked(1, 0), 13);
+            assert_eq!(matrix.get_unchecked(1, 1), 14);
+            assert_eq!(matrix.get_unchecked(1, 2), 15);
+        }
     }
 
     /// Test getting a value without checking the row and column when the row or column are invalid.
@@ -830,7 +859,9 @@ mod tests {
         let data: [u64; 6] = [10, 11, 12, 13, 14, 15];
         let matrix: Matrix<u64> = Matrix::from_slice(rows, columns, &data).unwrap();
 
-        let _: u64 = matrix.get_unchecked(rows.get(), columns.get() + 2);
+        unsafe {
+            let _: u64 = matrix.get_unchecked(rows.get(), columns.get() + 2);
+        }
     }
 
     // endregion
