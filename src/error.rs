@@ -18,15 +18,34 @@ pub type Result<T> = result::Result<T, Error>;
 #[non_exhaustive]
 #[derive(Debug)]
 pub enum Error {
-    /// Errors caused if the dimensions of a matrix are invalid.
-    MatrixDimension(String),
+    /// If an element is accessed whose coordinates (row and column) are not within the matrix.
+    CellOutOfBounds,
+
+    /// If the dimensions of a matrix do not match the dimensions of another matrix or the length of
+    /// a slice from which a matrix with specific dimensions is created, this error will be
+    /// returned.
+    DimensionMismatch,
+
+    /// If the dimensions of a matrix exceed the maximum allowed value, this error will be returned.
+    DimensionsTooLarge,
 }
 
 impl fmt::Display for Error {
     /// Format this error using the given formatter.
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            Error::MatrixDimension(ref error) => write!(formatter, "{}", error),
+            Error::DimensionMismatch => write!(
+                formatter,
+                "The dimensions of the matrices must be the same or the length of the slice must match the dimensions of the matrix."
+            ),
+            Error::DimensionsTooLarge => write!(
+                formatter,
+                "The product of rows and columns must not exceed the maximum usize value, ::std::usize::MAX."
+            ),
+            Error::CellOutOfBounds => write!(
+                formatter,
+                "The cell is not part of the matrix."
+            ),
         }
     }
 }
@@ -35,31 +54,62 @@ impl error::Error for Error {
     /// The underlying source of this error, if any.
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         match *self {
-            Error::MatrixDimension(_) => None,
+            _ => None,
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::error::Error as ErrorTrait;
+    use std::error::Error as _;
 
     use super::*;
 
+    /// Test formatting a `CellOutOfBounds` error.
     #[test]
-    fn fmt_matrix_dimension() {
-        let message: &str = "Matrix Dimension Failure";
-        let error = Error::MatrixDimension(String::from(message));
-        assert_eq!(format!("{}", error), message);
+    fn fmt_cell_out_of_bounds() {
+        let error = Error::CellOutOfBounds;
+        assert_eq!(format!("{}", error), "The cell is not part of the matrix.");
     }
 
+    /// Test formatting a `DimensionMismatch` error.
     #[test]
-    fn source_matrix_dimension() {
-        let message: &str = "Matrix Dimension Failure";
-        let error = Error::MatrixDimension(String::from(message));
-        assert!(
-            error.source().is_none(),
-            "Matrix Dimension errors do not have a cause."
+    fn fmt_dimension_mismatch() {
+        let error = Error::DimensionMismatch;
+        assert_eq!(
+            format!("{}", error),
+            "The dimensions of the matrices must be the same or the length of the slice must match the dimensions of the matrix."
         );
+    }
+
+    /// Test formatting a `DimensionsTooLarge` error.
+    #[test]
+    fn fmt_dimensions_too_large() {
+        let error = Error::DimensionsTooLarge;
+        assert_eq!(
+            format!("{}", error),
+            "The product of rows and columns must not exceed the maximum usize value, ::std::usize::MAX."
+        );
+    }
+
+    /// Test getting the source of a `CellOutOfBounds` error.
+    #[test]
+    fn source_cell_out_of_bounds() {
+        let error = Error::CellOutOfBounds;
+        assert!(error.source().is_none());
+    }
+
+    /// Test getting the source of a `DimensionsMismatch` error.
+    #[test]
+    fn source_dimension_mismatch() {
+        let error = Error::DimensionMismatch;
+        assert!(error.source().is_none());
+    }
+
+    /// Test getting the source of a `DimensionsTooLarge` error.
+    #[test]
+    fn source_dimensions_too_large() {
+        let error = Error::DimensionsTooLarge;
+        assert!(error.source().is_none());
     }
 }

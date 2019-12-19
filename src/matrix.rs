@@ -118,16 +118,14 @@ impl<T> Matrix<T> {
     ///
     /// The product of `rows` and `columns` must not exceed the maximum `usize` value,
     /// [`::std::usize::MAX`]. If this invariant is uphold, the length will be returned. Otherwise,
-    /// an [`Error::MatrixDimension`] will be returned.
+    /// an [`Error::DimensionsTooLarge`] will be returned.
     ///
     /// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
-    /// [`Error::MatrixDimension`]: enum.Error.html#variant.MatrixDimension
+    /// [`Error::DimensionsTooLarge`]: enum.Error.html#variant.DimensionsTooLarge
     fn get_length_from_rows_and_columns(rows: usize, columns: usize) -> Result<usize> {
         match rows.checked_mul(columns) {
             Some(length) => Ok(length),
-            None => Err(Error::MatrixDimension(
-                "The product of rows and columns must not exceed std::usize::MAX.".to_owned(),
-            )),
+            None => Err(Error::DimensionsTooLarge),
         }
     }
 
@@ -148,7 +146,7 @@ where
     /// Create a new matrix with the given dimensions and the given default value in all elements.
     ///
     /// The product of the number of `rows` and the number of `columns` must not exceed the maximum
-    /// `usize` value, [`::std::usize::MAX`]. Otherwise, an [`Error::MatrixDimension`] will be
+    /// `usize` value, [`::std::usize::MAX`]. Otherwise, an [`Error::DimensionsTooLarge`] will be
     /// returned.
     ///
     /// # Example
@@ -166,7 +164,7 @@ where
     /// ```
     ///
     /// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
-    /// [`Error::MatrixDimension`]: enum.Error.html#variant.MatrixDimension
+    /// [`Error::DimensionsTooLarge`]: enum.Error.html#variant.DimensionsTooLarge
     pub fn new(rows: NonZeroUsize, columns: NonZeroUsize, default: T) -> Result<Matrix<T>> {
         let num_rows: usize = rows.get();
         let num_columns: usize = columns.get();
@@ -190,8 +188,9 @@ where
     /// the first row in the matrix, the second `m` elements will become the second row and so on.
     ///
     /// The product of the number of `rows` and the number of `columns` must not exceed the maximum
-    /// `usize` value, [`::std::usize::MAX`], and it must be equal to the length of the given data
-    /// slice. Otherwise, an [`Error::MatrixDimension`] will be returned.
+    /// `usize` value, [`::std::usize::MAX`]. If it does, an [`Error::DimensionsTooLarge`] will be
+    /// returned. Furthermore, the product must be equal to the length of the given data slice.
+    /// Otherwise, an [`Error::DimensionMismatch`] will be returned.
     ///
     /// # Example
     ///
@@ -214,7 +213,8 @@ where
     /// ```
     ///
     /// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
-    /// [`Error::MatrixDimension`]: enum.Error.html#variant.MatrixDimension
+    /// [`Error::DimensionMismatch`]: enum.Error.html#variant.DimensionMismatch
+    /// [`Error::DimensionsTooLarge`]: enum.Error.html#variant.DimensionsTooLarge
     pub fn from_slice(rows: NonZeroUsize, columns: NonZeroUsize, data: &[T]) -> Result<Matrix<T>> {
         let num_rows: usize = rows.get();
         let num_columns: usize = columns.get();
@@ -222,10 +222,7 @@ where
         // Check that the length of the data slice matches the dimensions of the matrix.
         let length: usize = Matrix::<T>::get_length_from_rows_and_columns(num_rows, num_columns)?;
         if length != data.len() {
-            return Err(Error::MatrixDimension(
-                "The length of the data slice must be equal to the product of rows and columns."
-                    .to_owned(),
-            ));
+            return Err(Error::DimensionMismatch);
         }
 
         // Return the matrix.
@@ -243,18 +240,16 @@ where
     /// Get the value in the given `row` and `column`.
     ///
     /// If the `row` or `column` value is larger than the number of rows or columns in the matrix,
-    /// respectively, an [`Error::MatrixDimension`] will be returned.
+    /// respectively, an [`Error::CellOutOfBounds`] will be returned.
     ///
     /// If it can be guaranteed that the `row` and `column` values do not exceed the dimensions of
     /// the matrix, you can also use [`get_unchecked`].
     ///
     /// [`get_unchecked`]: #method.get_unchecked
-    /// [`Error::MatrixDimension`]: enum.Error.html#variant.MatrixDimension
+    /// [`Error::CellOutOfBounds`]: enum.Error.html#variant.CellOutOfBounds
     pub fn get(&self, row: usize, column: usize) -> Result<T> {
         if row >= self.rows || column >= self.columns {
-            return Err(Error::MatrixDimension(
-                "The row or column are not within the matrix dimensions.".to_owned(),
-            ));
+            return Err(Error::CellOutOfBounds);
         }
 
         Ok(self.get_unchecked(row, column))
@@ -500,8 +495,8 @@ impl<'a, 'b> Add<&'b Matrix<f64>> for &'a Matrix<f64> {
 
     /// Element-wise add the `other` matrix to this matrix.
     ///
-    /// The dimensions of both matrices must match, otherwise an [`Error::MatrixDimension`] will be
-    /// returned.
+    /// The dimensions of both matrices must match, otherwise an [`Error::DimensionMismatch`] will
+    /// be returned.
     ///
     /// # Example
     ///
@@ -521,13 +516,11 @@ impl<'a, 'b> Add<&'b Matrix<f64>> for &'a Matrix<f64> {
     /// assert_eq!(result.unwrap().as_slice(), [0.5, 2.66, -0.2, 2.0, -5.46, 2.4]);
     /// ```
     ///
-    /// [`Error::MatrixDimension`]: enum.Error.html#variant.MatrixDimension
+    /// [`Error::DimensionMismatch`]: enum.Error.html#variant.DimensionMismatch
     fn add(self, other: &'b Matrix<f64>) -> Self::Output {
         // For element-wise addition, the dimensions of both matrices must be the same.
         if self.rows != other.get_rows() || self.columns != other.get_columns() {
-            return Err(Error::MatrixDimension(
-                "The dimensions of the matrices must be the same.".to_owned(),
-            ));
+            return Err(Error::DimensionMismatch);
         }
 
         let mut result: Matrix<f64> = Matrix {
@@ -573,12 +566,15 @@ mod tests {
 
         assert!(matrix_result.is_err());
 
-        match matrix_result.unwrap_err() {
-            Error::MatrixDimension(ref description) => assert_eq!(
-                description,
-                "The product of rows and columns must not exceed std::usize::MAX."
-            ),
-        }
+        let is_correct_error: bool = match matrix_result.unwrap_err() {
+            Error::DimensionsTooLarge => true,
+            _ => false,
+        };
+
+        assert!(
+            is_correct_error,
+            "Expected error Error::DimensionsTooLarge not satisfied."
+        );
     }
 
     /// Test creating a new matrix from a slice with dimensions that do not exceed the maximum size
@@ -608,12 +604,15 @@ mod tests {
 
         assert!(matrix_result.is_err());
 
-        match matrix_result.unwrap_err() {
-            Error::MatrixDimension(ref description) => assert_eq!(
-                description,
-                "The product of rows and columns must not exceed std::usize::MAX."
-            ),
-        }
+        let is_correct_error: bool = match matrix_result.unwrap_err() {
+            Error::DimensionsTooLarge => true,
+            _ => false,
+        };
+
+        assert!(
+            is_correct_error,
+            "Expected error Error::DimensionsTooLarge not satisfied."
+        );
     }
 
     /// Test creating a new matrix from a slice with dimensions that do not match the length of the
@@ -627,12 +626,15 @@ mod tests {
 
         assert!(matrix_result.is_err());
 
-        match matrix_result.unwrap_err() {
-            Error::MatrixDimension(ref description) => assert_eq!(
-                description,
-                "The length of the data slice must be equal to the product of rows and columns."
-            ),
-        }
+        let is_correct_error: bool = match matrix_result.unwrap_err() {
+            Error::DimensionMismatch => true,
+            _ => false,
+        };
+
+        assert!(
+            is_correct_error,
+            "Expected error Error::DimensionMismatch not satisfied."
+        );
     }
 
     // endregion
@@ -714,12 +716,15 @@ mod tests {
 
         assert!(length.is_err());
 
-        match length.unwrap_err() {
-            Error::MatrixDimension(ref description) => assert_eq!(
-                description,
-                "The product of rows and columns must not exceed std::usize::MAX."
-            ),
-        }
+        let is_correct_error: bool = match length.unwrap_err() {
+            Error::DimensionsTooLarge => true,
+            _ => false,
+        };
+
+        assert!(
+            is_correct_error,
+            "Expected error Error::DimensionsTooLarge not satisfied."
+        );
     }
 
     /// Test getting the number of rows.
@@ -761,40 +766,43 @@ mod tests {
         let value: Result<u64> = matrix.get(rows.get() + 1, columns.get() + 2);
         assert!(value.is_err());
 
-        match value.unwrap_err() {
-            Error::MatrixDimension(ref description) => {
-                assert_eq!(
-                    description,
-                    "The row or column are not within the matrix dimensions."
-                );
-            }
-        }
+        let is_correct_error: bool = match value.unwrap_err() {
+            Error::CellOutOfBounds => true,
+            _ => false,
+        };
+
+        assert!(
+            is_correct_error,
+            "Expected error Error::CellOutOfBounds not satisfied."
+        );
 
         // Only the row is invalid.
         let value: Result<u64> = matrix.get(rows.get() + 1, columns.get());
         assert!(value.is_err());
 
-        match value.unwrap_err() {
-            Error::MatrixDimension(ref description) => {
-                assert_eq!(
-                    description,
-                    "The row or column are not within the matrix dimensions."
-                );
-            }
-        }
+        let is_correct_error: bool = match value.unwrap_err() {
+            Error::CellOutOfBounds => true,
+            _ => false,
+        };
+
+        assert!(
+            is_correct_error,
+            "Expected error Error::CellOutOfBounds not satisfied."
+        );
 
         // Only the column is invalid.
         let value: Result<u64> = matrix.get(rows.get(), columns.get() + 2);
         assert!(value.is_err());
 
-        match value.unwrap_err() {
-            Error::MatrixDimension(ref description) => {
-                assert_eq!(
-                    description,
-                    "The row or column are not within the matrix dimensions."
-                );
-            }
-        }
+        let is_correct_error: bool = match value.unwrap_err() {
+            Error::CellOutOfBounds => true,
+            _ => false,
+        };
+
+        assert!(
+            is_correct_error,
+            "Expected error Error::CellOutOfBounds not satisfied."
+        );
     }
 
     /// Test getting a value without checking the row and column when the row and column are valid.
@@ -902,12 +910,15 @@ mod tests {
         let result: Result<Matrix<f64>> = &matrix + &other;
         assert!(result.is_err());
 
-        match result.unwrap_err() {
-            Error::MatrixDimension(ref description) => assert_eq!(
-                description,
-                "The dimensions of the matrices must be the same."
-            ),
-        }
+        let is_correct_error: bool = match result.unwrap_err() {
+            Error::DimensionMismatch => true,
+            _ => false,
+        };
+
+        assert!(
+            is_correct_error,
+            "Expected error Error::DimensionMismatch not satisfied."
+        );
     }
 
     // endregion
