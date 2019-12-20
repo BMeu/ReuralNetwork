@@ -521,8 +521,11 @@ where
     }
 }
 
-impl Add<f64> for &'_ Matrix<f64> {
-    type Output = Matrix<f64>;
+impl<T> Add<T> for &'_ Matrix<T>
+where
+    T: Add<Output = T> + Copy,
+{
+    type Output = Matrix<T>;
 
     /// Add the scalar `value` to each element in the matrix.
     ///
@@ -540,8 +543,8 @@ impl Add<f64> for &'_ Matrix<f64> {
     /// let result: Matrix<f64> = &matrix + 1_f64;
     /// assert_eq!(result.as_slice(), [1.25, 2.33, 0.9, 2.0, -1.73, 2.2]);
     /// ```
-    fn add(self, value: f64) -> Self::Output {
-        let mut result: Matrix<f64> = Matrix {
+    fn add(self, value: T) -> Self::Output {
+        let mut result: Matrix<T> = Matrix {
             rows: self.rows,
             columns: self.columns,
             data: self.data.clone(),
@@ -553,8 +556,11 @@ impl Add<f64> for &'_ Matrix<f64> {
     }
 }
 
-impl Add<&'_ Matrix<f64>> for &'_ Matrix<f64> {
-    type Output = Result<Matrix<f64>>;
+impl<T> Add<&'_ Matrix<T>> for &'_ Matrix<T>
+where
+    T: Add<Output = T> + Copy,
+{
+    type Output = Result<Matrix<T>>;
 
     /// Element-wise add the `other` matrix to this matrix.
     ///
@@ -580,13 +586,13 @@ impl Add<&'_ Matrix<f64>> for &'_ Matrix<f64> {
     /// ```
     ///
     /// [`Error::DimensionMismatch`]: enum.Error.html#variant.DimensionMismatch
-    fn add(self, other: &'_ Matrix<f64>) -> Self::Output {
+    fn add(self, other: &'_ Matrix<T>) -> Self::Output {
         // For element-wise addition, the dimensions of both matrices must be the same.
         if self.get_rows() != other.get_rows() || self.get_columns() != other.get_columns() {
             return Err(Error::DimensionMismatch);
         }
 
-        let mut result: Matrix<f64> = Matrix {
+        let mut result: Matrix<T> = Matrix {
             rows: self.rows,
             columns: self.columns,
             data: self.data.clone(),
