@@ -57,10 +57,10 @@ use std::cmp::max;
 #[derive(Debug)]
 pub struct Matrix<T> {
     /// The number of rows the matrix has.
-    rows: usize,
+    rows: NonZeroUsize,
 
     /// The number of columns the matrix has.
-    columns: usize,
+    columns: NonZeroUsize,
 
     /// The actual data of the matrix as a 1-dimensional array.
     ///
@@ -98,7 +98,7 @@ impl<T> Matrix<T> {
 
     /// Get the number of columns in the matrix.
     pub fn get_columns(&self) -> usize {
-        self.columns
+        self.columns.get()
     }
 
     /// Get the index in the 1-dimensional data vector for the element in the given `row` and
@@ -117,7 +117,7 @@ impl<T> Matrix<T> {
     /// data structure will be out of bounds. Using this index without any further checks to access
     /// data in the data structure will cause a panic.
     unsafe fn get_index_unchecked(&self, row: usize, column: usize) -> usize {
-        self.columns * row + column
+        self.columns.get() * row + column
     }
 
     /// Get the length of the data vector based on the number of rows and columns.
@@ -128,8 +128,11 @@ impl<T> Matrix<T> {
     ///
     /// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
     /// [`Error::DimensionsTooLarge`]: enum.Error.html#variant.DimensionsTooLarge
-    fn get_length_from_rows_and_columns(rows: usize, columns: usize) -> Result<usize> {
-        match rows.checked_mul(columns) {
+    fn get_length_from_rows_and_columns(
+        rows: NonZeroUsize,
+        columns: NonZeroUsize,
+    ) -> Result<usize> {
+        match rows.get().checked_mul(columns.get()) {
             Some(length) => Ok(length),
             None => Err(Error::DimensionsTooLarge),
         }
@@ -137,7 +140,7 @@ impl<T> Matrix<T> {
 
     /// Get the number of rows in the matrix.
     pub fn get_rows(&self) -> usize {
-        self.rows
+        self.rows.get()
     }
 
     // endregion
@@ -172,18 +175,15 @@ where
     /// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
     /// [`Error::DimensionsTooLarge`]: enum.Error.html#variant.DimensionsTooLarge
     pub fn new(rows: NonZeroUsize, columns: NonZeroUsize, default: T) -> Result<Matrix<T>> {
-        let num_rows: usize = rows.get();
-        let num_columns: usize = columns.get();
-
         // Create the data structure and initialize it with the default value.
-        let length: usize = Matrix::<T>::get_length_from_rows_and_columns(num_rows, num_columns)?;
+        let length: usize = Matrix::<T>::get_length_from_rows_and_columns(rows, columns)?;
         let mut data: Vec<T> = Vec::with_capacity(length);
         data.resize(length, default);
 
         // Return the matrix.
         Ok(Matrix {
-            rows: num_rows,
-            columns: num_columns,
+            rows,
+            columns,
             data,
         })
     }
@@ -222,19 +222,16 @@ where
     /// [`Error::DimensionMismatch`]: enum.Error.html#variant.DimensionMismatch
     /// [`Error::DimensionsTooLarge`]: enum.Error.html#variant.DimensionsTooLarge
     pub fn from_slice(rows: NonZeroUsize, columns: NonZeroUsize, data: &[T]) -> Result<Matrix<T>> {
-        let num_rows: usize = rows.get();
-        let num_columns: usize = columns.get();
-
         // Check that the length of the data slice matches the dimensions of the matrix.
-        let length: usize = Matrix::<T>::get_length_from_rows_and_columns(num_rows, num_columns)?;
+        let length: usize = Matrix::<T>::get_length_from_rows_and_columns(rows, columns)?;
         if length != data.len() {
             return Err(Error::DimensionMismatch);
         }
 
         // Return the matrix.
         Ok(Matrix {
-            rows: num_rows,
-            columns: num_columns,
+            rows,
+            columns,
             data: data.to_vec(),
         })
     }
@@ -254,7 +251,7 @@ where
     /// [`get_unchecked`]: #method.get_unchecked
     /// [`Error::CellOutOfBounds`]: enum.Error.html#variant.CellOutOfBounds
     pub fn get(&self, row: usize, column: usize) -> Result<T> {
-        if row >= self.rows || column >= self.columns {
+        if row >= self.get_rows() || column >= self.get_columns() {
             return Err(Error::CellOutOfBounds);
         }
 
@@ -315,8 +312,8 @@ where
     where
         F: Fn(T, usize, usize) -> T,
     {
-        for row in 0..self.rows {
-            for column in 0..self.columns {
+        for row in 0..self.get_rows() {
+            for column in 0..self.get_columns() {
                 unsafe {
                     // Since we iterate over all rows and columns, they are always valid and we
                     // don't have to check any invariants.
@@ -363,12 +360,13 @@ where
     /// ```
     pub fn transpose(&self) -> Matrix<T> {
         // The rows and columns are switched in the transposed matrix.
-        let rows: usize = self.columns;
-        let columns: usize = self.rows;
+        let rows: NonZeroUsize = self.columns;
+        let columns: NonZeroUsize = self.rows;
 
         // Allocate the required memory at once. This is faster than having to resize the vector
         // every few insertions.
-        let length: usize = rows * columns;
+        // TODO: Use get_length_from_rows_and_columns()
+        let length: usize = rows.get() * columns.get();
         let mut data: Vec<T> = Vec::with_capacity(length);
         for index in 0..length {
             // Basically, iterate over the new data vector (which is still empty in the beginning).
@@ -376,8 +374,8 @@ where
             // matrix based on the index.
 
             // Get the row and column for this index in the transposed matrix.
-            let row: usize = index / columns;
-            let column: usize = index % columns;
+            let row: usize = index / columns.get();
+            let column: usize = index % columns.get();
 
             // Rows and columns are switched in the transposed matrix, so consider this when getting
             // the index for the original data.
@@ -434,11 +432,11 @@ where
         // Align all columns, but each column may have a different alignment. Thus, first iterate
         // over the columns, then the rows, to get the width of each column from all values in the
         // column.
-        let mut column_widths: Vec<usize> = Vec::with_capacity(self.columns);
-        for column in 0..self.columns {
+        let mut column_widths: Vec<usize> = Vec::with_capacity(self.get_columns());
+        for column in 0..self.get_columns() {
             // Get the maximum width of the current column.
             let mut max_width: usize = 0;
-            for row in 0..self.rows {
+            for row in 0..self.get_rows() {
                 // Do not use self.get_unchecked() here as this requires T to implement Copy.
                 unsafe {
                     // We iterate over the rows and columns and thus, they are always valid.
@@ -453,10 +451,10 @@ where
         }
 
         // Now, go through each row and format each value with the width of its column.
-        let mut rows: Vec<String> = Vec::with_capacity(self.rows);
-        for row in 0..self.rows {
+        let mut rows: Vec<String> = Vec::with_capacity(self.get_rows());
+        for row in 0..self.get_rows() {
             // For each row, collect the formatted values first.
-            let mut row_values: Vec<String> = Vec::with_capacity(self.columns);
+            let mut row_values: Vec<String> = Vec::with_capacity(self.get_columns());
             for (column, width) in column_widths.iter().enumerate() {
                 unsafe {
                     // We iterate over the rows and columns and thus, they are always valid.
@@ -543,7 +541,7 @@ impl<'a, 'b> Add<&'b Matrix<f64>> for &'a Matrix<f64> {
     /// [`Error::DimensionMismatch`]: enum.Error.html#variant.DimensionMismatch
     fn add(self, other: &'b Matrix<f64>) -> Self::Output {
         // For element-wise addition, the dimensions of both matrices must be the same.
-        if self.rows != other.get_rows() || self.columns != other.get_columns() {
+        if self.get_rows() != other.get_rows() || self.get_columns() != other.get_columns() {
             return Err(Error::DimensionMismatch);
         }
 
@@ -577,8 +575,8 @@ mod tests {
         assert!(matrix_result.is_ok());
 
         let matrix: Matrix<usize> = matrix_result.unwrap();
-        assert_eq!(matrix.rows, rows.get());
-        assert_eq!(matrix.columns, columns.get());
+        assert_eq!(matrix.rows.get(), rows.get());
+        assert_eq!(matrix.columns.get(), columns.get());
         assert_eq!(matrix.as_slice(), [0_usize; 15]);
     }
 
@@ -614,8 +612,8 @@ mod tests {
         assert!(matrix_result.is_ok());
 
         let matrix: Matrix<usize> = matrix_result.unwrap();
-        assert_eq!(matrix.rows, rows.get());
-        assert_eq!(matrix.columns, columns.get());
+        assert_eq!(matrix.rows.get(), rows.get());
+        assert_eq!(matrix.columns.get(), columns.get());
         assert_eq!(matrix.as_slice(), data);
     }
 
@@ -683,8 +681,8 @@ mod tests {
         let rows: usize = 3;
         let columns: usize = 2;
         let matrix = Matrix {
-            rows,
-            columns,
+            rows: NonZeroUsize::new(rows).unwrap(),
+            columns: NonZeroUsize::new(columns).unwrap(),
             data: vec![0, 1],
         };
 
@@ -723,21 +721,21 @@ mod tests {
     /// matrix when the product of the number of rows and columns does not overflow.
     #[test]
     fn get_length_from_rows_and_columns_non_overflowing() {
-        let rows: usize = 7;
-        let columns: usize = 6;
+        let rows: NonZeroUsize = NonZeroUsize::new(7).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(6).unwrap();
         let length: Result<usize> =
             Matrix::<usize>::get_length_from_rows_and_columns(rows, columns);
 
         assert!(length.is_ok());
-        assert_eq!(length.unwrap(), rows * columns);
+        assert_eq!(length.unwrap(), rows.get() * columns.get());
     }
 
     /// Test getting the length of the data vector based on the number of rows and columns in the
     /// matrix when the product of the number of rows and columns would overflow.
     #[test]
     fn get_length_from_rows_and_columns_overflowing() {
-        let rows: usize = ::std::usize::MAX;
-        let columns: usize = 2;
+        let rows: NonZeroUsize = NonZeroUsize::new(::std::usize::MAX).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(2).unwrap();
         let length: Result<usize> =
             Matrix::<usize>::get_length_from_rows_and_columns(rows, columns);
 
@@ -760,8 +758,8 @@ mod tests {
         let rows: usize = 3;
         let columns: usize = 2;
         let matrix = Matrix {
-            rows,
-            columns,
+            rows: NonZeroUsize::new(rows).unwrap(),
+            columns: NonZeroUsize::new(columns).unwrap(),
             data: vec![0, 1],
         };
 
@@ -895,8 +893,8 @@ mod tests {
         let matrix: Matrix<usize> = Matrix::from_slice(rows, columns, &data).unwrap();
 
         let transposed: Matrix<usize> = matrix.transpose();
-        assert_eq!(transposed.rows, columns.get());
-        assert_eq!(transposed.columns, rows.get());
+        assert_eq!(transposed.get_rows(), columns.get());
+        assert_eq!(transposed.get_columns(), rows.get());
         assert_eq!(transposed.as_slice(), [0, 3, 1, 4, 2, 5]);
     }
 
