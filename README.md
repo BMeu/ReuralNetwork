@@ -6,6 +6,8 @@
 
 A simple neural network written in Rust, just for fun.
 
+The latest documentation can be found at [https://bmeu.github.io/ReuralNetwork/](https://bmeu.github.io/ReuralNetwork/).
+
 ## Author
 
 `Reural Network` is developed by [Bastian Meyer](https://www.bastianmeyer.eu)

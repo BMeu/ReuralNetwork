@@ -4,7 +4,7 @@
 
 if [[ "${TRAVIS_RUST_VERSION}" == "stable" && "${TRAVIS_OS_NAME}" == "linux" ]]
 then
-  cargo rustdoc --lib --all-features -- --document-private-items &&
+  cargo rustdoc --lib --all-features &&
   echo "<meta http-equiv=refresh content=0;url=${PROJECT_NAME}/index.html>" > target/doc/index.html &&
   sudo pip install ghp-import &&
   ghp-import -n target/doc &&
