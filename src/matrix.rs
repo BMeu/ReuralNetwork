@@ -165,8 +165,8 @@ impl<T> Matrix<T> {
     ///
     /// # Safety
     ///
-    /// If the product of `rows` and `length` overflows [`::std::usize::MAX`], the method will
-    /// panic.
+    /// If the product of `rows` and `length` would be greater than [`::std::usize::MAX`], the
+    /// method will panic in debug builds and will silently overflow in release builds.
     ///
     /// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
     /// [`get_length_from_rows_and_columns`]: #method.get_length_from_rows_and_columns
@@ -811,13 +811,34 @@ mod tests {
     /// Test getting the length of the data vector based on the number of rows and columns in the
     /// matrix when the product of the number of rows and columns would overflow, without checking
     /// if the length would exceed the maximum size.
+    ///
+    /// In debug mode, the overflow will cause a panic.
     #[test]
+    #[cfg(debug_assertions)]
     #[should_panic(expected = "attempt to multiply with overflow")]
-    fn get_length_from_rows_and_columns_unchecked_overflowing() {
+    fn get_length_from_rows_and_columns_unchecked_overflowing_debug() {
         let rows: NonZeroUsize = NonZeroUsize::new(::std::usize::MAX - 1).unwrap();
         let columns: NonZeroUsize = NonZeroUsize::new(2).unwrap();
         unsafe {
             let _ = Matrix::<usize>::get_length_from_rows_and_columns_unchecked(rows, columns);
+        }
+    }
+
+    /// Test getting the length of the data vector based on the number of rows and columns in the
+    /// matrix when the product of the number of rows and columns would overflow, without checking
+    /// if the length would exceed the maximum size.
+    ///
+    /// In release mode, the computation will silently overflow.
+    #[test]
+    #[cfg(not(debug_assertions))]
+    fn get_length_from_rows_and_columns_unchecked_overflowing_release() {
+        let rows: NonZeroUsize = NonZeroUsize::new(::std::usize::MAX - 1).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        unsafe {
+            let length: usize =
+                Matrix::<usize>::get_length_from_rows_and_columns_unchecked(rows, columns);
+
+            assert_eq!(length, ::std::usize::MAX - 3);
         }
     }
 
