@@ -521,7 +521,7 @@ where
     }
 }
 
-impl<'a> Add<f64> for &'a Matrix<f64> {
+impl Add<f64> for &'_ Matrix<f64> {
     type Output = Matrix<f64>;
 
     /// Add the scalar `value` to each element in the matrix.
@@ -553,7 +553,7 @@ impl<'a> Add<f64> for &'a Matrix<f64> {
     }
 }
 
-impl<'a, 'b> Add<&'b Matrix<f64>> for &'a Matrix<f64> {
+impl Add<&'_ Matrix<f64>> for &'_ Matrix<f64> {
     type Output = Result<Matrix<f64>>;
 
     /// Element-wise add the `other` matrix to this matrix.
@@ -580,7 +580,7 @@ impl<'a, 'b> Add<&'b Matrix<f64>> for &'a Matrix<f64> {
     /// ```
     ///
     /// [`Error::DimensionMismatch`]: enum.Error.html#variant.DimensionMismatch
-    fn add(self, other: &'b Matrix<f64>) -> Self::Output {
+    fn add(self, other: &'_ Matrix<f64>) -> Self::Output {
         // For element-wise addition, the dimensions of both matrices must be the same.
         if self.get_rows() != other.get_rows() || self.get_columns() != other.get_columns() {
             return Err(Error::DimensionMismatch);
