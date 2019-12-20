@@ -10,6 +10,6 @@ then
   ghp-import -n target/doc &&
 
   # Upload the documentation to GitHub.
-  git push -qf https://${GITHUB_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git documentation;
+  git push -qf https://${GITHUB_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git gh-pages;
   echo "Uploaded documentation"
 fi;
