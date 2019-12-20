@@ -63,6 +63,8 @@ use std::cmp::max;
 /// * Transposition: flipping a matrix over its diagonal ([`transpose`]).
 /// * Map: change each element in a matrix based on a closure ([`map`]).
 ///
+/// These operations use a naive implementation without any considerations for performance.
+///
 /// [`map`]: #method.map
 /// [`transpose`]: #method.transpose
 /// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
