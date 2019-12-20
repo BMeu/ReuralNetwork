@@ -18,6 +18,11 @@ use std::cmp::max;
 
 /// A matrix is a 2-dimensional structure with specific dimensions that can hold data of any type.
 ///
+/// Rows and columns of a matrix are zero-indexed, meaning that the top left element of the matrix
+/// is in row `0` and column `0`, and the bottom right elememt is in row `rows - 1` and column
+/// `columns - 1`, where `rows` and `columns` are the number of rows and columns the matrix has,
+/// respectively.
+///
 /// # Example
 ///
 /// Create a new matrix from a slice of data, add a scalar value to it and transpose the result:
@@ -42,6 +47,12 @@ use std::cmp::max;
 /// assert_eq!(transposed.as_slice(), &[9.6, 5.835, 11.3, 7.3, 10.6, -34.7]);
 /// ```
 ///
+/// # Size Limits
+///
+/// A matrix can hold a maximum number of [`::std::usize::MAX`] elements. When creating a new
+/// matrix, it is checked if the given number of rows and columns would create a matrix that would
+/// exceed this size limit. In this case, the matrix cannot be created.
+///
 /// # Supported Mathematical Operations
 ///
 /// The following mathematical operations are supported for matrices:
@@ -54,6 +65,7 @@ use std::cmp::max;
 ///
 /// [`map`]: #method.map
 /// [`transpose`]: #method.transpose
+/// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
 #[derive(Debug)]
 pub struct Matrix<T> {
     /// The number of rows the matrix has.
@@ -151,7 +163,7 @@ impl<T> Matrix<T> {
     /// If you cannot guarantee that the result will not exceed the maximum size, use
     /// [`get_length_from_rows_and_columns`] instead.
     ///
-    /// # Panics
+    /// # Safety
     ///
     /// If the product of `rows` and `length` overflows [`::std::usize::MAX`], the method will
     /// panic.
