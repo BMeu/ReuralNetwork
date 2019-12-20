@@ -126,8 +126,12 @@ impl<T> Matrix<T> {
     /// [`::std::usize::MAX`]. If this invariant is uphold, the length will be returned. Otherwise,
     /// an [`Error::DimensionsTooLarge`] will be returned.
     ///
+    /// If you can guarantee that the resulting length will not exceed the maximum size of the
+    /// matrix, you can also use [`get_length_from_rows_and_columns_unchecked`].
+    ///
     /// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
     /// [`Error::DimensionsTooLarge`]: enum.Error.html#variant.DimensionsTooLarge
+    /// [`get_length_from_rows_and_columns_unchecked`]: #method.get_length_from_rows_and_columns_unchecked
     fn get_length_from_rows_and_columns(
         rows: NonZeroUsize,
         columns: NonZeroUsize,
@@ -136,6 +140,29 @@ impl<T> Matrix<T> {
             Some(length) => Ok(length),
             None => Err(Error::DimensionsTooLarge),
         }
+    }
+
+    /// Get the length of the data vector based on the number of rows and columns.
+    ///
+    /// This method will not check if the resulting length would exceed the maximum size of the
+    /// matrix, [`::std::usize::MAX`]. If this happens, the method will panic due to an attempt to
+    /// multiply with an overflow.
+    ///
+    /// If you cannot guarantee that the result will not exceed the maximum size, use
+    /// [`get_length_from_rows_and_columns`] instead.
+    ///
+    /// # Panics
+    ///
+    /// If the product of `rows` and `length` overflows [`::std::usize::MAX`], the method will
+    /// panic.
+    ///
+    /// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
+    /// [`get_length_from_rows_and_columns`]: #method.get_length_from_rows_and_columns
+    unsafe fn get_length_from_rows_and_columns_unchecked(
+        rows: NonZeroUsize,
+        columns: NonZeroUsize,
+    ) -> usize {
+        rows.get() * columns.get()
     }
 
     /// Get the number of rows in the matrix.
@@ -365,32 +392,34 @@ where
 
         // Allocate the required memory at once. This is faster than having to resize the vector
         // every few insertions.
-        // TODO: Use get_length_from_rows_and_columns()
-        let length: usize = rows.get() * columns.get();
-        let mut data: Vec<T> = Vec::with_capacity(length);
-        for index in 0..length {
-            // Basically, iterate over the new data vector (which is still empty in the beginning).
-            // For every index of the new vector, find the corresponding value from the original
-            // matrix based on the index.
+        unsafe {
+            // The rows and columns did not exceed the maximum size in the original matrix, so they
+            // won't do this here, either.
+            let length: usize =
+                Matrix::<T>::get_length_from_rows_and_columns_unchecked(rows, columns);
+            let mut data: Vec<T> = Vec::with_capacity(length);
+            for index in 0..length {
+                // Basically, iterate over the new data vector (which is still empty in the
+                // beginning). For every index of the new vector, find the corresponding value from
+                // the original matrix based on the index.
 
-            // Get the row and column for this index in the transposed matrix.
-            let row: usize = index / columns.get();
-            let column: usize = index % columns.get();
+                // Get the row and column for this index in the transposed matrix.
+                let row: usize = index / columns.get();
+                let column: usize = index % columns.get();
 
-            // Rows and columns are switched in the transposed matrix, so consider this when getting
-            // the index for the original data.
-            unsafe {
+                // Rows and columns are switched in the transposed matrix, so consider this when
+                // getting the index for the original data.
                 // Since we iterate over the vector and compute the row and column from this index,
                 // the values are always valid.
                 let value: T = self.get_unchecked(column, row);
-                data.push(value);
+                data.push(value)
             }
-        }
 
-        Matrix {
-            rows,
-            columns,
-            data,
+            Matrix {
+                rows,
+                columns,
+                data,
+            }
         }
     }
 
@@ -750,6 +779,34 @@ mod tests {
             is_correct_error,
             "Expected error Error::DimensionsTooLarge not satisfied."
         );
+    }
+
+    /// Test getting the length of the data vector based on the number of rows and columns in the
+    /// matrix when the product of the number of rows and columns does not overflow, without
+    /// checking if the length would exceed the maximum size.
+    #[test]
+    fn get_length_from_rows_and_columns_unchecked_non_overflowing() {
+        let rows: NonZeroUsize = NonZeroUsize::new(7).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(6).unwrap();
+        unsafe {
+            let length: usize =
+                Matrix::<usize>::get_length_from_rows_and_columns_unchecked(rows, columns);
+
+            assert_eq!(length, rows.get() * columns.get());
+        }
+    }
+
+    /// Test getting the length of the data vector based on the number of rows and columns in the
+    /// matrix when the product of the number of rows and columns would overflow, without checking
+    /// if the length would exceed the maximum size.
+    #[test]
+    #[should_panic(expected = "attempt to multiply with overflow")]
+    fn get_length_from_rows_and_columns_unchecked_overflowing() {
+        let rows: NonZeroUsize = NonZeroUsize::new(::std::usize::MAX - 1).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        unsafe {
+            let _ = Matrix::<usize>::get_length_from_rows_and_columns_unchecked(rows, columns);
+        }
     }
 
     /// Test getting the number of rows.
