@@ -71,7 +71,7 @@ use crate::Result;
 ///     * Element-wise addition of two matrices with the same dimensions.
 ///     * Scalar addition of a matrix and a scalar value.
 /// * Subtraction[<sup>*</sup>]
-///     * Elemen-wise subtraction of two matrices with the same dimensions.
+///     * Element-wise subtraction of two matrices with the same dimensions.
 /// * Multiplication[<sup>*</sup>]
 ///     * Element-wise multiplication (Hadamard product) of two matrices with the same dimensions.
 /// * Division[<sup>*</sup>]
