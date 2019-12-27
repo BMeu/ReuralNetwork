@@ -5,7 +5,7 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be copied, modified, or
 // distributed except according to those terms.
 
-//! Error handling.
+//! Error handling and related stuff.
 
 use std::error;
 use std::fmt;
