@@ -235,9 +235,9 @@ macro_rules! impl_element_wise_binary_operator_with_references {
                 $data_type,
                 $data_self,
                 $data_other,
-                matrix,
+                *,
                 $operator,
-                other,
+                *,
                 $result
             )
         );
@@ -254,9 +254,9 @@ macro_rules! impl_element_wise_binary_operator_with_references {
                 $data_type,
                 $data_self,
                 $data_other,
-                matrix,
+                *,
                 $operator,
-                &other,
+                &,
                 $result
             )
         );
@@ -273,9 +273,9 @@ macro_rules! impl_element_wise_binary_operator_with_references {
                 $data_type,
                 $data_self,
                 $data_other,
-                &matrix,
+                &,
                 $operator,
-                other,
+                *,
                 $result
             )
         );
@@ -292,9 +292,9 @@ macro_rules! impl_element_wise_binary_operator_with_references {
                 $data_type,
                 $data_self,
                 $data_other,
-                &matrix,
+                &,
                 $operator,
-                &other,
+                &,
                 $result
             )
         );
@@ -705,9 +705,11 @@ macro_rules! test_element_wise_binary_operator {
 ///                 a length of `6`.
 /// * `$data_other`: The actual data array for the second (`other`) matrix in the example. It must
 ///                  have a length of `6`.
-/// * `$lhs_ident`: The `self` matrix identifier, either `matrix` or `&matrix`.
+/// * `$lhs_access`: How to access the `self` matrix identifier, either `*` (by value) or `&`
+///                  (by reference).
 /// * `$operator`: The operator of the element-wise binary operation.
-/// * `$rhs_ident`: The `other` matrix identifier, either `other` or `&other`.
+/// * `$rhs_access`: How to access the `other` matrix identifier, either `*` (by value) or `&`
+///                  (by reference).
 /// * `$expected_result`: An array of expected values for the operation in the example.
 ///
 /// # Example
@@ -720,9 +722,9 @@ macro_rules! test_element_wise_binary_operator {
 ///     f64,
 ///     [0.1, -2.33, 1.0, 3.3, 0.0, 42.1337],
 ///     [0.1, -2.33, 1.0, 3.3, 0.0, 42.1337],
-///     matrix,
+///     *,
 ///     +,
-///     &other,
+///     &,
 ///     [0.2, -4.66, 2.0, 6.6, 0.0, 84.2674]
 /// );
 /// ```
@@ -733,9 +735,9 @@ macro_rules! doc_element_wise_binary_operator {
      $data_type:tt,
      $data_self:expr,
      $data_other:expr,
-     $lhs_ident:expr,
+     $lhs_access:tt,
      $operator:tt,
-     $rhs_ident:expr,
+     $rhs_access:tt,
      $expected_result:expr
     ) => {
         concat!(
@@ -766,11 +768,11 @@ macro_rules! doc_element_wise_binary_operator {
             "let other = Matrix::from_slice(rows, columns, &data_other).unwrap();",
             "\n\n",
             "let result = ",
-            stringify!($lhs_ident),
+            $crate::access_variable_as_string!($lhs_access matrix),
             " ",
             stringify!($operator),
             " ",
-            stringify!($rhs_ident),
+            $crate::access_variable_as_string!($rhs_access other),
             ";\n",
             "assert_eq!(result.unwrap().as_slice(), &",
             stringify!($expected_result),
