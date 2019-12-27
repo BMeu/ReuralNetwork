@@ -7,6 +7,44 @@
 
 //! Collection of general macros.
 
+/// Specify a type either as owned or as referenced.
+///
+/// # Parameters
+///
+/// * `$type`: The type to specify either as owned or as referenced.
+///
+/// # Example
+///
+/// Implement `Add<Example> for &'_ Example` with output type `Example`:
+///
+/// ```
+/// use std::ops::Add;
+/// # use reural_network::specify_type;
+///
+/// struct Example;
+///
+/// impl Add<specify_type!(* Example)> for specify_type!(& Example) {
+///     type Output = specify_type!(* Example);
+///
+///     fn add(self, other: specify_type!(* Example)) -> Self::Output {
+///         return other;
+///     }
+/// }
+/// ```
+#[doc(hidden)]
+#[macro_export]
+macro_rules! specify_type {
+    // Specify the type as an owned type.
+    (* $type:ty) => {
+        $type
+    };
+
+    // Specify the type as a referenced type.
+    (& $type:ty) => {
+        &'_ $type
+    };
+}
+
 /// Access the given variable either by value or by reference.
 ///
 /// # Parameters

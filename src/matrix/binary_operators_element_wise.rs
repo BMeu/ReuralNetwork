@@ -225,8 +225,8 @@ macro_rules! impl_element_wise_binary_operator_with_references {
     ) => {
         // Implement the operator for Matrix<T> and Matrix<T>.
         $crate::impl_element_wise_binary_operator!(
-            Matrix<T>,
-            Matrix<T>,
+            *,
+            *,
             $trait,
             $fn,
             $operator,
@@ -244,8 +244,8 @@ macro_rules! impl_element_wise_binary_operator_with_references {
 
         // Implement the operator for Matrix<T> and &'_ Matrix<T>.
         $crate::impl_element_wise_binary_operator!(
-            Matrix<T>,
-            &'_ Matrix<T>,
+            *,
+            &,
             $trait,
             $fn,
             $operator,
@@ -263,8 +263,8 @@ macro_rules! impl_element_wise_binary_operator_with_references {
 
         // Implement the operator for &'_ Matrix<T> and Matrix<T>.
         $crate::impl_element_wise_binary_operator!(
-            &'_ Matrix<T>,
-            Matrix<T>,
+            &,
+            *,
             $trait,
             $fn,
             $operator,
@@ -282,8 +282,8 @@ macro_rules! impl_element_wise_binary_operator_with_references {
 
         // Implement the operator for &'_ Matrix<T> and &'_ Matrix<T>.
         $crate::impl_element_wise_binary_operator!(
-            &'_ Matrix<T>,
-            &'_ Matrix<T>,
+            &,
+            &,
             $trait,
             $fn,
             $operator,
@@ -306,8 +306,10 @@ macro_rules! impl_element_wise_binary_operator_with_references {
 ///
 /// # Parameters
 ///
-/// * `$lhs`: The left-hand side of the operator. Must be `Matrix<T>` or `&'_ Matrix<T>`.
-/// * `$rhs`: The right-hand side of the operator. Must be `Matrix<T>` or `&'_ Matrix<T>`.
+/// * `$lhs_access`: The left-hand side access type of the operator, either `*` for owned access or
+///                  `&` for referenced access.
+/// * `$rhs_access`: The right-hand side access type of the operator, either `*` for owned access or
+///                  `&` for referenced access
 /// * `$trait`: The binary-operator trait to implement. This trait must also be implemented by `T`.
 /// * `$fn`: The name of the function that implements the binary operator.
 /// * `$operator`: The actual binary operator, e.g. `+` for the `Add` trait.
@@ -319,8 +321,8 @@ macro_rules! impl_element_wise_binary_operator_with_references {
 ///
 /// ```text
 /// impl_element_wise_binary_operator!(
-///     Matrix<T>,
-///     &'_ Matrix<T>,
+///     *,
+///     &,
 ///     Add,
 ///     add,
 ///     +,
@@ -330,15 +332,16 @@ macro_rules! impl_element_wise_binary_operator_with_references {
 #[doc(hidden)]
 #[macro_export]
 macro_rules! impl_element_wise_binary_operator {
-    ($lhs:ty, $rhs:ty, $trait:tt, $fn:tt, $operator:tt, $documentation:expr) => {
-        impl<T> $trait<$rhs> for $lhs
+    ($lhs_access:tt, $rhs_access:tt, $trait:tt, $fn:tt, $operator:tt, $documentation:expr) => {
+        impl<T> $trait<$crate::specify_matrix_type!($rhs_access)>
+        for $crate::specify_matrix_type!($lhs_access)
         where
             T: $trait<Output = T> + Copy,
         {
             type Output = Result<Matrix<T>>;
 
             #[doc = $documentation]
-            fn $fn(self, other: $rhs) -> Self::Output {
+            fn $fn(self, other: $crate::specify_matrix_type!($rhs_access)) -> Self::Output {
                 // For element-wise operations, the dimensions of both matrices must be the same.
                 if self.get_rows() != other.get_rows() || self.get_columns() != other.get_columns()
                 {

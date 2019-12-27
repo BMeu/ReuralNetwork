@@ -11,3 +11,4 @@ pub use self::definition::Matrix;
 
 mod binary_operators_element_wise;
 mod definition;
+mod macros;
