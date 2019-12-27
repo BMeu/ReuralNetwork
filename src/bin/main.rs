@@ -9,7 +9,7 @@
 
 use std::num::NonZeroUsize;
 
-use reural_network::Matrix;
+use reural_network::matrix::Matrix;
 
 /// The main function.
 fn main() {

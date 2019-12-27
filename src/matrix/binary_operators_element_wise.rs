@@ -5,9 +5,16 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be copied, modified, or
 // distributed except according to those terms.
 
-//! A collection of macros to implement traits for the Matrix struct.
+//! Macros to implement element-wise binary operations.
+//!
+//! The main macros in this module are [`impl_element_wise_binary_operators`] to implement all
+//! binary operators as element-wise operations, and [`test_element_wise_binary_operators`] to test
+//! these implementations.
+//!
+//! [`impl_element_wise_binary_operators`]: ../../macro.impl_element_wise_binary_operators.html
+//! [`test_element_wise_binary_operators`]: ../../macro.test_element_wise_binary_operators.html
 
-// region Element-wise Binary Operators
+// region Implement
 
 /// Implement all binary operators as element-wise operations on two matrices `Matrix<T>` and all
 /// possible combinations including (immutable) references of these types.
@@ -353,95 +360,14 @@ macro_rules! impl_element_wise_binary_operator {
     };
 }
 
-/// Get a documentation string for the element-wise binary operators.
-///
-/// # Parameters
-///
-/// * `$explanation`: A short explanation of what the operator does.
-/// * `$data_type`: The type of the data for the first and second matrix in the example.
-/// * `$data_self`: The actual data array for the first (`self`) matrix in the example.
-/// * `$data_other`: The actual data array for the second (`other`) matrix in the example.
-/// * `$lhs_ident`: The `self` matrix identifier, either `matrix` or `&matrix`.
-/// * `$operator`: The operator of the element-wise binary operation.
-/// * `$rhs_ident`: The `other` matrix identifier, either `other` or `&other`.
-/// * `$expected_result`: An array of expected values for the operation in the example.
-///
-/// # Example
-///
-/// Get the documentation for element-wise addition:
-///
-/// ```text
-/// doc_element_wise_binary_operator!(
-///     "Element-wise add the values of `other` to `self`.",
-///     [f64; 6],
-///     [0.1, -2.33, 1.0, 3.3, 0.0, 42.1337],
-///     [0.1, -2.33, 1.0, 3.3, 0.0, 42.1337],
-///     matrix,
-///     +,
-///     &other,
-///     [0.2, -4.66, 2.0, 6.6, 0.0, 84.2674]
-/// );
-/// ```
-#[doc(hidden)]
-#[macro_export]
-macro_rules! doc_element_wise_binary_operator {
-    ($explanation:expr,
-     $data_type:tt,
-     $data_self:expr,
-     $data_other:expr,
-     $lhs_ident:expr,
-     $operator:tt,
-     $rhs_ident:expr,
-     $expected_result:expr
-    ) => {
-        concat!(
-            $explanation,
-            "\n\n",
-            "The dimensions of both matrices must match, otherwise an [`Error::DimensionMismatch`]\
-             will be returned.",
-            "\n\n",
-            "# Example",
-            "\n\n",
-            "```\n",
-            "use std::num::NonZeroUsize;\n",
-            "use reural_network::Matrix;",
-            "\n\n",
-            "let rows = NonZeroUsize::new(2).unwrap();\n",
-            "let columns = NonZeroUsize::new(3).unwrap();\n",
-            "let data_matrix: ",
-            stringify!($data_type),
-            " = ",
-            stringify!($data_self),
-            ";\n",
-            "let data_other: ",
-            stringify!($data_type),
-            " = ",
-            stringify!($data_other),
-            ";\n",
-            "let matrix = Matrix::from_slice(rows, columns, &data_matrix).unwrap();\n",
-            "let other = Matrix::from_slice(rows, columns, &data_other).unwrap();",
-            "\n\n",
-            "let result = ",
-            stringify!($lhs_ident),
-            " ",
-            stringify!($operator),
-            " ",
-            stringify!($rhs_ident),
-            ";\n",
-            "assert_eq!(result.unwrap().as_slice(), &",
-            stringify!($expected_result),
-            ");\n",
-            "```",
-            "\n\n",
-            "[`Error::DimensionMismatch`]: enum.Error.html#variant.DimensionMismatch"
-        );
-    };
-}
+// endregion
+
+// region Tests
 
 /// Implement tests for all element-wise binary operations on two matrices `Matrix<T>` and all
 /// possible combinations including (immutable) references of these types.
 ///
-/// # Implemented Binary Operators Traits
+/// # Tested Binary Operators Traits
 ///
 /// * [`Add`]
 /// * [`BitAnd`]
@@ -762,40 +688,91 @@ macro_rules! test_element_wise_binary_operator {
 
 // endregion
 
-/// Access the given variable either by value or by reference.
+// region Documentation
+
+/// Get a documentation string for the element-wise binary operators.
 ///
 /// # Parameters
 ///
-/// * `$variable`: The variable to get either by value or as a reference.
+/// * `$explanation`: A short explanation of what the operator does.
+/// * `$data_type`: The type of the data for the first and second matrix in the example.
+/// * `$data_self`: The actual data array for the first (`self`) matrix in the example.
+/// * `$data_other`: The actual data array for the second (`other`) matrix in the example.
+/// * `$lhs_ident`: The `self` matrix identifier, either `matrix` or `&matrix`.
+/// * `$operator`: The operator of the element-wise binary operation.
+/// * `$rhs_ident`: The `other` matrix identifier, either `other` or `&other`.
+/// * `$expected_result`: An array of expected values for the operation in the example.
 ///
 /// # Example
 ///
-/// ```
-/// # use reural_network::access_variable;
-/// # fn main() {
-/// let a = [0, 2, 4, 8];
+/// Get the documentation for element-wise addition:
 ///
-/// // Access `a` by value.
-/// let b = access_variable!(* a);
-/// // Is the same as:
-/// // let b = a;
-///
-/// // Access `a` by reference.
-/// let c = access_variable!(& a);
-/// // Is the same as:
-/// // let c = &a;
-/// # }
+/// ```text
+/// doc_element_wise_binary_operator!(
+///     "Element-wise add the values of `other` to `self`.",
+///     [f64; 6],
+///     [0.1, -2.33, 1.0, 3.3, 0.0, 42.1337],
+///     [0.1, -2.33, 1.0, 3.3, 0.0, 42.1337],
+///     matrix,
+///     +,
+///     &other,
+///     [0.2, -4.66, 2.0, 6.6, 0.0, 84.2674]
+/// );
 /// ```
 #[doc(hidden)]
 #[macro_export]
-macro_rules! access_variable {
-    // Get the variable by value.
-    (* $variable:ident) => {
-        $variable
-    };
-
-    // Get the variable by reference.
-    (& $variable:ident) => {
-        &$variable
+macro_rules! doc_element_wise_binary_operator {
+    ($explanation:expr,
+     $data_type:tt,
+     $data_self:expr,
+     $data_other:expr,
+     $lhs_ident:expr,
+     $operator:tt,
+     $rhs_ident:expr,
+     $expected_result:expr
+    ) => {
+        concat!(
+            $explanation,
+            "\n\n",
+            "The dimensions of both matrices must match, otherwise an [`Error::DimensionMismatch`] \
+             will be returned.",
+            "\n\n",
+            "# Example",
+            "\n\n",
+            "```\n",
+            "use std::num::NonZeroUsize;\n",
+            "use reural_network::matrix::Matrix;",
+            "\n\n",
+            "let rows = NonZeroUsize::new(2).unwrap();\n",
+            "let columns = NonZeroUsize::new(3).unwrap();\n",
+            "let data_matrix: ",
+            stringify!($data_type),
+            " = ",
+            stringify!($data_self),
+            ";\n",
+            "let data_other: ",
+            stringify!($data_type),
+            " = ",
+            stringify!($data_other),
+            ";\n",
+            "let matrix = Matrix::from_slice(rows, columns, &data_matrix).unwrap();\n",
+            "let other = Matrix::from_slice(rows, columns, &data_other).unwrap();",
+            "\n\n",
+            "let result = ",
+            stringify!($lhs_ident),
+            " ",
+            stringify!($operator),
+            " ",
+            stringify!($rhs_ident),
+            ";\n",
+            "assert_eq!(result.unwrap().as_slice(), &",
+            stringify!($expected_result),
+            ");\n",
+            "```",
+            "\n\n",
+            "[`Error::DimensionMismatch`]: enum.Error.html#variant.DimensionMismatch"
+        );
     };
 }
+
+// endregion

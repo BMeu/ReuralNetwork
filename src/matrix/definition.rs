@@ -5,7 +5,7 @@
 // http://opensource.org/licenses/MIT>, at your option. This file may not be copied, modified, or
 // distributed except according to those terms.
 
-//! A simple and naive implementation of mathematical matrices.
+//! Definition and implementation of the matrix struct.
 
 use std::cmp::max;
 use std::fmt::Display;
@@ -39,7 +39,7 @@ use crate::Result;
 ///
 /// ```
 /// use std::num::NonZeroUsize;
-/// use reural_network::Matrix;
+/// use reural_network::matrix::Matrix;
 ///
 /// let rows = NonZeroUsize::new(2).unwrap();
 /// let columns = NonZeroUsize::new(3).unwrap();
@@ -236,7 +236,7 @@ where
     ///
     /// ```
     /// use std::num::NonZeroUsize;
-    /// use reural_network::Matrix;
+    /// use reural_network::matrix::Matrix;
     ///
     /// let rows = NonZeroUsize::new(2).unwrap();
     /// let columns = NonZeroUsize::new(3).unwrap();
@@ -275,7 +275,7 @@ where
     ///
     /// ```
     /// use std::num::NonZeroUsize;
-    /// use reural_network::Matrix;
+    /// use reural_network::matrix::Matrix;
     ///
     /// let rows = NonZeroUsize::new(2).unwrap();
     /// let columns = NonZeroUsize::new(3).unwrap();
@@ -368,7 +368,7 @@ where
     ///
     /// ```
     /// use std::num::NonZeroUsize;
-    /// use reural_network::Matrix;
+    /// use reural_network::matrix::Matrix;
     ///
     /// let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
     /// let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
@@ -418,7 +418,7 @@ where
     ///
     /// ```
     /// use std::num::NonZeroUsize;
-    /// use reural_network::Matrix;
+    /// use reural_network::matrix::Matrix;
     ///
     /// let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
     /// let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
@@ -484,7 +484,7 @@ where
     ///
     /// ```
     /// use std::num::NonZeroUsize;
-    /// use reural_network::Matrix;
+    /// use reural_network::matrix::Matrix;
     ///
     /// let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
     /// let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
@@ -565,7 +565,7 @@ where
     ///
     /// ```
     /// use std::num::NonZeroUsize;
-    /// use reural_network::Matrix;
+    /// use reural_network::matrix::Matrix;
     ///
     /// let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
     /// let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
