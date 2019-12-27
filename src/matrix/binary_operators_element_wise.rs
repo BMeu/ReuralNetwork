@@ -54,7 +54,7 @@ macro_rules! impl_element_wise_binary_operators {
             add,
             +,
             "Add each element in `self` to the corresponding element in `other`.",
-            [f64; 6],
+            f64,
             [0.25, 1.33, -0.1, 1.0, -2.73, 1.2],
             [0.25, 1.33, -0.1, 1.0, -2.73, 1.2],
             [0.5, 2.66, -0.2, 2.0, -5.46, 2.4]
@@ -67,7 +67,7 @@ macro_rules! impl_element_wise_binary_operators {
             &,
             "Calculate the bitwise AND of each element in `self` with the corresponding element in \
              `other`.",
-            [u8; 6],
+            u8,
             [7, 0, 1, 3, 5, 9],
             [4, 15, 1, 6, 5, 7],
             [4, 0, 1, 2, 5, 1]
@@ -80,7 +80,7 @@ macro_rules! impl_element_wise_binary_operators {
             |,
             "Calculate the bitwise OR of each element in `self` with the corresponding element in \
              `other`.",
-            [u8; 6],
+            u8,
             [7, 0, 1, 3, 5, 9],
             [4, 15, 1, 6, 5, 7],
             [7, 15, 1, 7, 5, 15]
@@ -93,7 +93,7 @@ macro_rules! impl_element_wise_binary_operators {
             ^,
             "Calculate the bitwise XOR of each element in `self` with the corresponding element in \
              `other`.",
-            [u8; 6],
+            u8,
             [7, 0, 1, 3, 5, 9],
             [4, 15, 1, 6, 5, 7],
             [3, 15, 0, 5, 0, 14]
@@ -105,7 +105,7 @@ macro_rules! impl_element_wise_binary_operators {
             div,
             /,
             "Divide each element in `self` by the corresponding element in `other`.",
-            [f64; 6],
+            f64,
             [1.0, 1.33, -0.1, 4.0, -2.73, 4.0],
             [2.0, 1.33, -4.0, -2.0, 2.73, 0.1],
             [0.5, 1.0, 0.025, -2.0, -1.0, 40.0]
@@ -118,7 +118,7 @@ macro_rules! impl_element_wise_binary_operators {
             *,
             "Multiply each element in `self` to the corresponding element in `other`, i.e.\
              calculate the Hadamard product of `self` and `other`.",
-            [f64; 6],
+            f64,
             [0.25, 1.0, -0.3, -1.0, 2.73, 1.2],
             [2.0, 0.25, -0.3, 2.0, -2.0, 1.2],
             [0.5, 0.25, 0.09, -2.0, -5.46, 1.44]
@@ -131,7 +131,7 @@ macro_rules! impl_element_wise_binary_operators {
             %,
             "Calculate the remainder when dividing each element in `self` by the corresponding \
              element in `other`.",
-            [i64; 6],
+            i64,
             [2, 6, -3, 5, 5, -10],
             [1, 4, 2, -4, 6, -2],
             [0, 2, -1, 1, 5, 0]
@@ -144,7 +144,7 @@ macro_rules! impl_element_wise_binary_operators {
             <<,
             "Bitwise shift each element in `self` to the left by the corresponding element in \
              `other`.",
-            [u8; 6],
+            u8,
             [7, 0, 1, 5, 6, 3],
             [1, 5, 5, 0, 2, 3],
             [14, 0, 32, 5, 24, 24]
@@ -157,7 +157,7 @@ macro_rules! impl_element_wise_binary_operators {
             >>,
             "Bitwise shift each element in `self` to the right by the corresponding element in \
              `other`.",
-            [u8; 6],
+            u8,
             [7, 0, 1, 5, 6, 15],
             [1, 5, 5, 2, 2, 3],
             [3, 0, 0, 1, 1, 1]
@@ -169,7 +169,7 @@ macro_rules! impl_element_wise_binary_operators {
             sub,
             -,
             "Subtract each element in `other` from the corresponding element in `self`.",
-            [f64; 6],
+            f64,
             [0.25, 1.0, -0.1, 1.0, -2.73, 1.3],
             [0.25, 0.4, 0.1, -1.0, -2.0, 3.6],
             [0.0, 0.6, -0.2, 2.0, -0.73, -2.3]
@@ -188,8 +188,10 @@ macro_rules! impl_element_wise_binary_operators {
 /// * `$explanation`: A short explanation for the documentation of what the operator does.
 /// * `$data_type`: The type of the data for the first and second matrix in the documentation
 ///                 example.
-/// * `$data`: The actual data array for the first (`self`) matrix in the documentation example.
-/// * `$data`: The actual data array for the second (`other`) matrix in the documentation example.
+/// * `$data_self`: The actual data array for the first (`self`) matrix in the documentation
+///                 example. It must have a length of `6`.
+/// * `$data_other`: The actual data array for the second (`other`) matrix in the documentation
+///                  example. It must have a length of `6`.
 /// * `$expected_result`: An array of expected values for the operation in the documentation
 ///                       example.
 ///
@@ -203,7 +205,7 @@ macro_rules! impl_element_wise_binary_operators {
 ///     add,
 ///     +,
 ///     "Add each element in `self` to the corresponding element in `other`.",
-///     [f64; 6],
+///     f64,
 ///     [0.25, 1.33, -0.1, 1.0, -2.73, 1.2],
 ///     [0.25, 1.33, -0.1, 1.0, -2.73, 1.2],
 ///     [0.5, 2.66, -0.2, 2.0, -5.46, 2.4]
@@ -696,8 +698,10 @@ macro_rules! test_element_wise_binary_operator {
 ///
 /// * `$explanation`: A short explanation of what the operator does.
 /// * `$data_type`: The type of the data for the first and second matrix in the example.
-/// * `$data_self`: The actual data array for the first (`self`) matrix in the example.
-/// * `$data_other`: The actual data array for the second (`other`) matrix in the example.
+/// * `$data_self`: The actual data array for the first (`self`) matrix in the example. It must have
+///                 a length of `6`.
+/// * `$data_other`: The actual data array for the second (`other`) matrix in the example. It must
+///                  have a length of `6`.
 /// * `$lhs_ident`: The `self` matrix identifier, either `matrix` or `&matrix`.
 /// * `$operator`: The operator of the element-wise binary operation.
 /// * `$rhs_ident`: The `other` matrix identifier, either `other` or `&other`.
@@ -710,7 +714,7 @@ macro_rules! test_element_wise_binary_operator {
 /// ```text
 /// doc_element_wise_binary_operator!(
 ///     "Element-wise add the values of `other` to `self`.",
-///     [f64; 6],
+///     f64,
 ///     [0.1, -2.33, 1.0, 3.3, 0.0, 42.1337],
 ///     [0.1, -2.33, 1.0, 3.3, 0.0, 42.1337],
 ///     matrix,
@@ -745,14 +749,14 @@ macro_rules! doc_element_wise_binary_operator {
             "\n\n",
             "let rows = NonZeroUsize::new(2).unwrap();\n",
             "let columns = NonZeroUsize::new(3).unwrap();\n",
-            "let data_matrix: ",
+            "let data_matrix: [",
             stringify!($data_type),
-            " = ",
+            "; 6] = ",
             stringify!($data_self),
             ";\n",
-            "let data_other: ",
+            "let data_other: [",
             stringify!($data_type),
-            " = ",
+            "; 6] = ",
             stringify!($data_other),
             ";\n",
             "let matrix = Matrix::from_slice(rows, columns, &data_matrix).unwrap();\n",
@@ -770,7 +774,7 @@ macro_rules! doc_element_wise_binary_operator {
             ");\n",
             "```",
             "\n\n",
-            "[`Error::DimensionMismatch`]: enum.Error.html#variant.DimensionMismatch"
+            "[`Error::DimensionMismatch`]: ../enum.Error.html#variant.DimensionMismatch"
         );
     };
 }
