@@ -7,14 +7,24 @@
 
 //! A simple matrix library.
 
+use std::cmp::max;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::num::NonZeroUsize;
 use std::ops::Add;
+use std::ops::BitAnd;
+use std::ops::BitOr;
+use std::ops::BitXor;
+use std::ops::Div;
+use std::ops::Mul;
+use std::ops::Rem;
+use std::ops::Shl;
+use std::ops::Shr;
+use std::ops::Sub;
 
+use crate::impl_element_wise_binary_operators;
 use crate::Error;
 use crate::Result;
-use std::cmp::max;
 
 /// A matrix is a 2-dimensional structure with specific dimensions that can hold data of any type.
 ///
@@ -55,16 +65,36 @@ use std::cmp::max;
 ///
 /// # Supported Mathematical Operations
 ///
-/// The following mathematical operations are supported for matrices:
+/// The following mathematical operations are supported for matrices `Matrix<T>`:
 ///
-/// * Addition
+/// * Addition[<sup>*</sup>]
 ///     * Element-wise addition of two matrices with the same dimensions.
 ///     * Scalar addition of a matrix and a scalar value.
+/// * Subtraction[<sup>*</sup>]
+///     * Elemen-wise subtraction of two matrices with the same dimensions.
+/// * Multiplication[<sup>*</sup>]
+///     * Element-wise multiplication (Hadamard product) of two matrices with the same dimensions.
+/// * Division[<sup>*</sup>]
+///     * Element-wise division of two matrices with the same dimensions.
+/// * Bitwise AND[<sup>*</sup>]
+///     * Element-wise bitwise AND of two matrices with the same dimensions.
+/// * Bitwise OR[<sup>*</sup>]
+///     * Element-wise bitwise OR of two matrices with the same dimensions.
+/// * Bitwise XOR[<sup>*</sup>]
+///     * Element-wise bitwise XOR of two matrices with the same dimensions.
+/// * Left Shift[<sup>*</sup>]
+///     * Element-wise left shift of a matrix by another matrix with the same dimensions.
+/// * Right Shift[<sup>*</sup>]
+///     * Element-wise right shift of a matrix by another matrix with the same dimensions.
 /// * Transposition: flipping a matrix over its diagonal ([`transpose`]).
 /// * Map: change each element in a matrix based on a closure ([`map`]).
 ///
 /// These operations use a naive implementation without any considerations for performance.
 ///
+/// <a name="impl-note-operations"><sup>*</sup></a> The operation must be implemeneted for the type
+/// `T`.
+///
+/// [<sup>*</sup>]: #impl-note-operations
 /// [`map`]: #method.map
 /// [`transpose`]: #method.transpose
 /// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
@@ -558,59 +588,14 @@ where
     }
 }
 
-impl<T> Add<&'_ Matrix<T>> for &'_ Matrix<T>
-where
-    T: Add<Output = T> + Copy,
-{
-    type Output = Result<Matrix<T>>;
-
-    /// Element-wise add the `other` matrix to this matrix.
-    ///
-    /// The dimensions of both matrices must match, otherwise an [`Error::DimensionMismatch`] will
-    /// be returned.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use std::num::NonZeroUsize;
-    /// use reural_network::Matrix;
-    /// use reural_network::Result;
-    ///
-    /// let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
-    /// let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
-    /// let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-    /// let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
-    /// let other: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
-    ///
-    /// let result: Result<Matrix<f64>> = &matrix + &other;
-    /// assert!(result.is_ok());
-    /// assert_eq!(result.unwrap().as_slice(), [0.5, 2.66, -0.2, 2.0, -5.46, 2.4]);
-    /// ```
-    ///
-    /// [`Error::DimensionMismatch`]: enum.Error.html#variant.DimensionMismatch
-    fn add(self, other: &'_ Matrix<T>) -> Self::Output {
-        // For element-wise addition, the dimensions of both matrices must be the same.
-        if self.get_rows() != other.get_rows() || self.get_columns() != other.get_columns() {
-            return Err(Error::DimensionMismatch);
-        }
-
-        let mut result: Matrix<T> = Matrix {
-            rows: self.rows,
-            columns: self.columns,
-            data: self.data.clone(),
-        };
-
-        // The row and column are given by the map method and are thus valid.
-        result.map(|element, row, column| unsafe { element + other.get_unchecked(row, column) });
-
-        Ok(result)
-    }
-}
+// Implement all binary operators as element-wise operations on two matrices.
+impl_element_wise_binary_operators!();
 
 #[cfg(test)]
 mod tests {
 
     use super::*;
+    use crate::test_element_wise_binary_operators;
 
     // region Initialization
 
@@ -1008,45 +993,8 @@ mod tests {
         assert_eq!(result.as_slice(), [1.25, 2.33, 0.9, 2.0, -1.73, 2.2]);
     }
 
-    /// Test adding a matrix to another matrix when their dimensions match.
-    #[test]
-    fn add_matrix_matching_dimensions() {
-        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
-        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
-        let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-        let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
-        let other: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
-
-        let result: Result<Matrix<f64>> = &matrix + &other;
-        assert!(result.is_ok());
-        assert_eq!(
-            result.unwrap().as_slice(),
-            [0.5, 2.66, -0.2, 2.0, -5.46, 2.4]
-        );
-    }
-
-    /// Test adding a matrix to another matrix when their dimensions do not match.
-    #[test]
-    fn add_matrix_not_matching_dimensions() {
-        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
-        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
-        let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-        let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
-        let other: Matrix<f64> = Matrix::from_slice(columns, rows, &data).unwrap();
-
-        let result: Result<Matrix<f64>> = &matrix + &other;
-        assert!(result.is_err());
-
-        let is_correct_error: bool = match result.unwrap_err() {
-            Error::DimensionMismatch => true,
-            _ => false,
-        };
-
-        assert!(
-            is_correct_error,
-            "Expected error Error::DimensionMismatch not satisfied."
-        );
-    }
+    // Test the element-wise binary operators.
+    test_element_wise_binary_operators!();
 
     // endregion
 

@@ -13,3 +13,4 @@ pub use self::matrix::Matrix;
 
 mod error;
 mod matrix;
+mod matrix_macros;
