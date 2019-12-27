@@ -8,11 +8,13 @@
 //! Error handling and related stuff.
 
 use std::error;
-use std::fmt;
-use std::result;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::Result as FmtResult;
+use std::result::Result as StdResult;
 
 /// A specialized `Result` type for Reural Network.
-pub type Result<T> = result::Result<T, Error>;
+pub type Result<T> = StdResult<T, Error>;
 
 /// A wrapper type for all errors caused by this crate.
 #[non_exhaustive]
@@ -30,9 +32,9 @@ pub enum Error {
     DimensionsTooLarge,
 }
 
-impl fmt::Display for Error {
+impl Display for Error {
     /// Format this error using the given formatter.
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
         match *self {
             Error::DimensionMismatch => write!(
                 formatter,
