@@ -612,6 +612,7 @@ macro_rules! test_element_wise_binary_operator_with_references {
      $operator:tt,
      $expected_result:expr
     ) => {
+        #[cfg(test)]
         mod $mod {
             use super::*;
 
@@ -714,6 +715,7 @@ macro_rules! test_element_wise_binary_operator {
      $rhs_access:tt,
      $expected_result:expr
     ) => {
+        #[cfg(test)]
         mod $mod {
             use super::*;
 
