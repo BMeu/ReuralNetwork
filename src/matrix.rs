@@ -1000,6 +1000,21 @@ mod tests {
 
     // region Display
 
+    /// Test formatting the matrix in debug mode.
+    #[test]
+    fn debug() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
+        let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
+        let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
+
+        let debug: String = format!("{:?}", matrix);
+        assert_eq!(
+            "Matrix { rows: 2, columns: 3, data: [0.25, 1.33, -0.1, 1.0, -2.73, 1.2] }",
+            debug
+        );
+    }
+
     /// Test formatting the matrix in a human readable way.
     #[test]
     fn display() {
@@ -1011,7 +1026,7 @@ mod tests {
         // This should come out as:
         // [0.25   1.33    -0.1]
         // [1      -2.73   1.2 ]
-        let display = format!("{}", matrix);
+        let display: String = format!("{}", matrix);
         assert_eq!("[0.25   1.33    -0.1]\n[1      -2.73   1.2 ]", display);
     }
 

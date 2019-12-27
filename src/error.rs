@@ -65,6 +65,27 @@ mod tests {
 
     use super::*;
 
+    /// Test debug formatting a `CellOutOfBounds` error.
+    #[test]
+    fn debug_cell_out_of_bounds() {
+        let error = Error::CellOutOfBounds;
+        assert_eq!(format!("{:?}", error), "CellOutOfBounds");
+    }
+
+    /// Test debug formatting a `DimensionMismatch` error.
+    #[test]
+    fn debug_dimension_mismatch() {
+        let error = Error::DimensionMismatch;
+        assert_eq!(format!("{:?}", error), "DimensionMismatch");
+    }
+
+    /// Test debug formatting a `DimensionsTooLarge` error.
+    #[test]
+    fn debug_dimensions_too_large() {
+        let error = Error::DimensionsTooLarge;
+        assert_eq!(format!("{:?}", error), "DimensionsTooLarge");
+    }
+
     /// Test formatting a `CellOutOfBounds` error.
     #[test]
     fn fmt_cell_out_of_bounds() {
