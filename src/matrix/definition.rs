@@ -23,6 +23,7 @@ use std::ops::Shr;
 use std::ops::Sub;
 
 use crate::impl_element_wise_binary_operators;
+use crate::impl_scalar_binary_operators;
 use crate::Error;
 use crate::Result;
 
@@ -553,49 +554,15 @@ where
     }
 }
 
-impl<T> Add<T> for &'_ Matrix<T>
-where
-    T: Add<Output = T> + Copy,
-{
-    type Output = Matrix<T>;
-
-    /// Add the scalar `value` to each element in the matrix.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// use std::num::NonZeroUsize;
-    /// use reural_network::matrix::Matrix;
-    ///
-    /// let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
-    /// let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
-    /// let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-    /// let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
-    ///
-    /// let result: Matrix<f64> = &matrix + 1_f64;
-    /// assert_eq!(result.as_slice(), [1.25, 2.33, 0.9, 2.0, -1.73, 2.2]);
-    /// ```
-    fn add(self, value: T) -> Self::Output {
-        let mut result: Matrix<T> = Matrix {
-            rows: self.rows,
-            columns: self.columns,
-            data: self.data.clone(),
-        };
-
-        result.map(|element, _row, _column| element + value);
-
-        result
-    }
-}
-
-// Implement all binary operators as element-wise operations on two matrices.
 impl_element_wise_binary_operators!();
+impl_scalar_binary_operators!();
 
 #[cfg(test)]
 mod tests {
 
     use super::*;
     use crate::test_element_wise_binary_operators;
+    use crate::test_scalar_binary_operators;
 
     // region Initialization
 
@@ -981,20 +948,9 @@ mod tests {
         assert_eq!(transposed.as_slice(), [0, 3, 1, 4, 2, 5]);
     }
 
-    /// Test adding a scalar value to a matrix.
-    #[test]
-    fn add_scalar() {
-        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
-        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
-        let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-        let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
-
-        let result: Matrix<f64> = &matrix + 1_f64;
-        assert_eq!(result.as_slice(), [1.25, 2.33, 0.9, 2.0, -1.73, 2.2]);
-    }
-
-    // Test the element-wise binary operators.
+    // Test the operators.
     test_element_wise_binary_operators!();
+    test_scalar_binary_operators!();
 
     // endregion
 
