@@ -17,6 +17,8 @@ use std::ops::BitOr;
 use std::ops::BitXor;
 use std::ops::Div;
 use std::ops::Mul;
+use std::ops::Neg;
+use std::ops::Not;
 use std::ops::Rem;
 use std::ops::Shl;
 use std::ops::Shr;
@@ -24,6 +26,7 @@ use std::ops::Sub;
 
 use crate::impl_element_wise_binary_operators;
 use crate::impl_scalar_binary_operators;
+use crate::impl_unary_operators;
 use crate::Error;
 use crate::Result;
 
@@ -556,6 +559,7 @@ where
 
 impl_element_wise_binary_operators!();
 impl_scalar_binary_operators!();
+impl_unary_operators!();
 
 #[cfg(test)]
 mod tests {
@@ -563,6 +567,7 @@ mod tests {
     use super::*;
     use crate::test_element_wise_binary_operators;
     use crate::test_scalar_binary_operators;
+    use crate::test_unary_operators;
 
     // region Initialization
 
@@ -951,6 +956,7 @@ mod tests {
     // Test the operators.
     test_element_wise_binary_operators!();
     test_scalar_binary_operators!();
+    test_unary_operators!();
 
     // endregion
 

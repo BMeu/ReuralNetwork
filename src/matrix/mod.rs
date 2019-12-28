@@ -13,3 +13,4 @@ mod binary_operators_element_wise;
 mod binary_operators_scalar;
 mod definition;
 mod macros;
+mod unary_operators;
