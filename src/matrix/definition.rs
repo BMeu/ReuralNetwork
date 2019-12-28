@@ -76,20 +76,30 @@ use crate::Result;
 ///     * Scalar addition of a matrix and a scalar value.
 /// * Subtraction[<sup>*</sup>]
 ///     * Element-wise subtraction of two matrices with the same dimensions.
+///     * Scalar subtraction of a scalar value from a matrix.
 /// * Multiplication[<sup>*</sup>]
 ///     * Element-wise multiplication (Hadamard product) of two matrices with the same dimensions.
+///     * Scalar multiplication of a scalar value to a matrix.
 /// * Division[<sup>*</sup>]
 ///     * Element-wise division of two matrices with the same dimensions.
+///     * Scalar division of a matrix by a scalar value.
 /// * Bitwise AND[<sup>*</sup>]
 ///     * Element-wise bitwise AND of two matrices with the same dimensions.
+///     * Scalar bitwise AND of a matrix and a scalar value.
 /// * Bitwise OR[<sup>*</sup>]
 ///     * Element-wise bitwise OR of two matrices with the same dimensions.
+///     * Scalar bitwise OR of a matrix and a scalar value.
 /// * Bitwise XOR[<sup>*</sup>]
 ///     * Element-wise bitwise XOR of two matrices with the same dimensions.
+///     * Scalar bitwise XOR of a matrix and a scalar value.
 /// * Left Shift[<sup>*</sup>]
 ///     * Element-wise left shift of a matrix by another matrix with the same dimensions.
+///     * Scalar left shift of a matrix by a scalar value.
 /// * Right Shift[<sup>*</sup>]
 ///     * Element-wise right shift of a matrix by another matrix with the same dimensions.
+///     * Scalar right shift of a matrix by a scalar value.
+/// * Negation:[<sup>*</sup>] Negate all elements of a matrix.
+/// * Logical Negation:[<sup>*</sup>] Logically negate all elements in a matrix.
 /// * Transposition: flipping a matrix over its diagonal ([`transpose`]).
 /// * Map: change each element in a matrix based on a closure ([`map`]).
 ///
