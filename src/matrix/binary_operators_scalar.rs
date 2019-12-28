@@ -8,7 +8,7 @@
 //! Macros to implement scalar binary operations.
 //!
 //! The main macros in this module are [`impl_scalar_binary_operators`] to implement all
-//! binary operators as element-wise operations, and [`test_scalar_binary_operators`] to test
+//! binary operators as scalar operations, and [`test_scalar_binary_operators`] to test
 //! these implementations.
 //!
 //! [`impl_scalar_binary_operators`]: ../../macro.impl_scalar_binary_operators.html
