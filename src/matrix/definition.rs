@@ -229,6 +229,51 @@ impl<T> Matrix<T> {
     }
 
     // endregion
+
+    // region Element Operations
+
+    /// Mutate each element in the matrix in place as given by the closure `mapping`.
+    ///
+    /// The `mapping` closure has three parameters, in this order:
+    ///
+    /// 1. The value of the current element as a mutable reference.
+    /// 2. The row of the current element.
+    /// 3. The column of the current element.
+    ///
+    /// # Example
+    ///
+    /// Convert a matrix of temperatures in °C to K:
+    ///
+    /// ```
+    /// use std::num::NonZeroUsize;
+    /// use reural_network::matrix::Matrix;
+    ///
+    /// let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+    /// let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
+    /// let temperatures: [f64; 6] = [0.0, 10.0, 25.0, 50.0, 75.0, 100.0];
+    /// let mut matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &temperatures).unwrap();
+    ///
+    /// // Convert Celsius to Kelvin.
+    /// matrix.map_ref_mut(|celsius, _row, _column| *celsius += 273.15);
+    /// assert_eq!(matrix.as_slice(), [273.15, 283.15, 298.15, 323.15, 348.15, 373.15]);
+    /// ```
+    pub fn map_ref_mut<F>(&mut self, mut mapping: F)
+    where
+        F: FnMut(&mut T, usize, usize),
+    {
+        for row in 0..self.get_rows() {
+            for column in 0..self.get_columns() {
+                unsafe {
+                    // Since we iterate over all rows and columns, they are always valid and we
+                    // don't have to check any invariants.
+                    let index: usize = self.get_index_unchecked(row, column);
+                    mapping(&mut self.data[index], row, column);
+                }
+            }
+        }
+    }
+
+    // endregion
 }
 
 impl<T> Matrix<T>
@@ -366,7 +411,7 @@ where
 
     // region Element Operations
 
-    /// Map each value in the matrix to a new value as given by the closure `mapping`.
+    /// Map each element in the matrix to a new element as given by the closure `mapping`.
     ///
     /// The `mapping` closure has three parameters, in this order:
     ///
@@ -947,6 +992,22 @@ mod tests {
 
         // Temperature in °F.
         assert_eq!(temperature.as_slice(), [32, 50, 77, 122, 167, 212]);
+    }
+
+    /// Test mapping the data in a matrix by mutable reference.
+    #[test]
+    fn map_ref_mut() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
+        let temperatures: [f64; 6] = [0.0, 10.0, 25.0, 50.0, 75.0, 100.0];
+        let mut matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &temperatures).unwrap();
+
+        // Convert Celsius to Kelvin.
+        matrix.map_ref_mut(|celsius, _row, _column| *celsius += 273.15);
+        assert_eq!(
+            matrix.as_slice(),
+            [273.15, 283.15, 298.15, 323.15, 348.15, 373.15]
+        );
     }
 
     /// Test transposing a matrix.
