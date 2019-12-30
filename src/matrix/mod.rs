@@ -9,6 +9,7 @@
 
 pub use self::definition::Matrix;
 
+mod assign_operators_scalar;
 mod binary_operators_element_wise;
 mod binary_operators_scalar;
 mod definition;

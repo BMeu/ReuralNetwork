@@ -12,19 +12,30 @@ use std::fmt::Display;
 use std::fmt::Formatter;
 use std::num::NonZeroUsize;
 use std::ops::Add;
+use std::ops::AddAssign;
 use std::ops::BitAnd;
+use std::ops::BitAndAssign;
 use std::ops::BitOr;
+use std::ops::BitOrAssign;
 use std::ops::BitXor;
+use std::ops::BitXorAssign;
 use std::ops::Div;
+use std::ops::DivAssign;
 use std::ops::Mul;
+use std::ops::MulAssign;
 use std::ops::Neg;
 use std::ops::Not;
 use std::ops::Rem;
+use std::ops::RemAssign;
 use std::ops::Shl;
+use std::ops::ShlAssign;
 use std::ops::Shr;
+use std::ops::ShrAssign;
 use std::ops::Sub;
+use std::ops::SubAssign;
 
 use crate::impl_element_wise_binary_operators;
+use crate::impl_scalar_assign_operators;
 use crate::impl_scalar_binary_operators;
 use crate::impl_unary_operators;
 use crate::Error;
@@ -612,6 +623,7 @@ where
     }
 }
 
+impl_scalar_assign_operators!();
 impl_element_wise_binary_operators!();
 impl_scalar_binary_operators!();
 impl_unary_operators!();
@@ -621,6 +633,7 @@ mod tests {
 
     use super::*;
     use crate::test_element_wise_binary_operators;
+    use crate::test_scalar_assign_operators;
     use crate::test_scalar_binary_operators;
     use crate::test_unary_operators;
 
@@ -1025,6 +1038,7 @@ mod tests {
     }
 
     // Test the operators.
+    test_scalar_assign_operators!();
     test_element_wise_binary_operators!();
     test_scalar_binary_operators!();
     test_unary_operators!();
