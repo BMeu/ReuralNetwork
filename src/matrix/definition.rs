@@ -121,7 +121,24 @@ use crate::Result;
 /// `matrix += other_matrix`) since both matrices must have the same dimensions. If the other matrix
 /// did not have the correct dimensions, we could either not perform the operation on `matrix`, or
 /// we could panic. Since both of these possibilities can be very surprising to the user, the
-/// assignment operators are not implemeneted for matrices.
+/// assignment operators are not implemeneted for matrices. Instead, you will have to resort to
+/// solutions like:
+///
+/// ```
+/// # use std::num::NonZeroUsize;
+/// # use reural_network::matrix::Matrix;
+/// # use reural_network::Result;
+/// #
+/// # let rows = NonZeroUsize::new(1).unwrap();
+/// # let columns = NonZeroUsize::new(1).unwrap();
+/// # let matrix = Matrix::from_slice(rows, columns, &[0.5]).unwrap();
+/// # let other_matrix = Matrix::from_slice(rows, columns, &[0.5]).unwrap();
+/// #
+/// let result = matrix + other_matrix;
+/// let matrix = result.unwrap();
+/// ```
+///
+/// -----
 ///
 /// <a name="impl-note-operations"><sup>*</sup></a> The operation must be implemeneted for the type
 /// `T`.
