@@ -116,6 +116,13 @@ use crate::Result;
 ///
 /// These operations use a naive implementation without any considerations for performance.
 ///
+/// The binary operations are also implemented as assignment operators for scalar values (e.g.
+/// `matrix += 4.5`). However, they are not implemented as assignment operators for matrices (e.g.
+/// `matrix += other_matrix`) since both matrices must have the same dimensions. If the other matrix
+/// did not have the correct dimensions, we could either not perform the operation on `matrix`, or
+/// we could panic. Since both of these possibilities can be very surprising to the user, the
+/// assignment operators are not implemeneted for matrices.
+///
 /// <a name="impl-note-operations"><sup>*</sup></a> The operation must be implemeneted for the type
 /// `T`.
 ///
