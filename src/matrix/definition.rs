@@ -111,6 +111,7 @@ use crate::Result;
 ///     * Scalar right shift of a matrix by a scalar value.
 /// * Negation:[<sup>*</sup>] Negate all elements of a matrix.
 /// * Logical Negation:[<sup>*</sup>] Logically negate all elements in a matrix.
+/// * Matrix Multiplication: compute the matrix product of two matrices ([`matrix_mul`]).
 /// * Transposition: flipping a matrix over its diagonal ([`transpose`]).
 /// * Map: change each element in a matrix based on a closure ([`map`]).
 ///
@@ -145,6 +146,7 @@ use crate::Result;
 ///
 /// [<sup>*</sup>]: #impl-note-operations
 /// [`map`]: #method.map
+/// [`matrix_mul`]: #method.matrix_mul
 /// [`transpose`]: #method.transpose
 /// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
 #[derive(Debug)]
@@ -209,6 +211,11 @@ impl<T> Matrix<T> {
     /// If the row or column are out of bounds of the matrix, the computed index for the internal
     /// data structure will be out of bounds. Using this index without any further checks to access
     /// data in the data structure will cause a panic.
+    ///
+    /// # Guarantees
+    ///
+    /// When iterating over all elements in a matrix in row-major format, the index will be
+    /// increasing by exactly 1.
     unsafe fn get_index_unchecked(&self, row: usize, column: usize) -> usize {
         self.columns.get() * row + column
     }
@@ -564,6 +571,105 @@ where
     // endregion
 }
 
+impl<T> Matrix<T>
+where
+    T: Add<T, Output = T> + Mul<T, Output = T> + Copy,
+{
+    /// Compute the matrix product of `self` and `other` and return the result.
+    ///
+    /// The number of columns in `self` must be equal to the number of rows in `other`. Otherwise,
+    /// [`Error::DimensionMismatch`] will be returned.
+    ///
+    /// The resulting matrix will have the dimensions `self.rows x other.columns`. If these
+    /// dimensions would exceed the maximum size of matrices, [`Error::DimensionsTooLarge`] will be
+    /// returned.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use std::num::NonZeroUsize;
+    /// # use reural_network::Result;
+    /// # use reural_network::matrix::Matrix;
+    /// #
+    /// // `m1` (2x3):
+    /// // [1   2   3]
+    /// // [4   5   6]
+    /// let rows_m1 = NonZeroUsize::new(2).unwrap();
+    /// let columns_m1 = NonZeroUsize::new(3).unwrap();
+    /// let data_m1: [usize; 6] = [1, 2, 3, 4, 5, 6];
+    /// let m1: Matrix<usize> = Matrix::from_slice(rows_m1, columns_m1, &data_m1).unwrap();
+    ///
+    /// // `m2` (3x2):
+    /// // [7    8 ]
+    /// // [9    10]
+    /// // [11   12]
+    /// let rows_m2 = NonZeroUsize::new(3).unwrap();
+    /// let columns_m2 = NonZeroUsize::new(2).unwrap();
+    /// let data_m2: [usize; 6] = [7, 8, 9, 10, 11, 12];
+    /// let m2: Matrix<usize> = Matrix::from_slice(rows_m2, columns_m2, &data_m2).unwrap();
+    ///
+    /// // Calculate `m3` as the matrix product of `m1` and `m2`.
+    /// // `m3` (2x2):
+    /// // [58    64 ]
+    /// // [139   154]
+    /// let m3: Matrix<usize> = m1.matrix_mul(&m2).unwrap();
+    /// assert_eq!(m3.get_rows(), 2);
+    /// assert_eq!(m3.get_columns(), 2);
+    /// assert_eq!(m3.as_slice(), &[58, 64, 139, 154]);
+    /// ```
+    ///
+    /// [`Error::DimensionMismatch`]: enum.Error.html#variant.DimensionMismatch
+    /// [`Error::DimensionsTooLarge`]: enum.Error.html#variant.DimensionsTooLarge
+    pub fn matrix_mul(&self, other: &Matrix<T>) -> Result<Matrix<T>> {
+        if self.get_columns() != other.get_rows() {
+            return Err(Error::DimensionMismatch);
+        }
+
+        // Ensure that the dimensions of the result matrix do not exceed the maximum size.
+        let rows: NonZeroUsize = self.rows;
+        let columns: NonZeroUsize = other.columns;
+        let size: usize = Matrix::<T>::get_length_from_rows_and_columns(rows, columns)?;
+
+        let mut result = Matrix {
+            rows,
+            columns,
+            data: Vec::with_capacity(size),
+        };
+
+        for row in 0..result.get_rows() {
+            for column in 0..result.get_columns() {
+                // All row and column values are valid so it is safe to use these unsafe and
+                // unchecked methods.
+                unsafe {
+                    // Calculate the sum of products. Since there is no general neutral element
+                    // of addition for `T` (e.g., 0 would be one for all number types), calculate
+                    // the first product outside the loop to initialize the variable without special
+                    // cases inside the loop. There must be at least this first element since we can
+                    // not have matrices without any elements.
+                    let mut element: T =
+                        self.get_unchecked(row, 0) * other.get_unchecked(0, column);
+
+                    for i in 1..self.get_columns() {
+                        let product: T =
+                            self.get_unchecked(row, i) * other.get_unchecked(i, column);
+
+                        // We don't want to require `T` to implement `AddAssign`, but only the
+                        // simpler `Add`.
+                        element = element + product;
+                    }
+
+                    // Set the element in the result matrix. Since we are iterating over the
+                    // elements in row-major format, the index at which `element` will be inserted
+                    // will be correct.
+                    result.data.push(element);
+                }
+            }
+        }
+
+        Ok(result)
+    }
+}
+
 impl<T> Display for Matrix<T>
 where
     T: Display,
@@ -815,6 +921,35 @@ mod tests {
         }
     }
 
+    /// Test that getting get index when iterating over all elements in row-major format will yield
+    /// indices that are increasing exactly by 1.
+    #[test]
+    fn get_index_unchecked_correct_increments() {
+        let rows = NonZeroUsize::new(5).unwrap();
+        let columns = NonZeroUsize::new(7).unwrap();
+        let matrix: Matrix<usize> = Matrix::new(rows, columns, 0).unwrap();
+
+        let mut previous_index: usize = 0;
+        for row in 0..matrix.get_rows() {
+            for column in 0..matrix.get_columns() {
+                unsafe {
+                    let index: usize = matrix.get_index_unchecked(row, column);
+
+                    // For the very first element e_0,0, the expected index is, of course, 0. For
+                    // all other elements, the expected index is the previous index plus 1.
+                    let expected_index: usize = match (row, column) {
+                        (0, 0) => 0,
+                        _ => previous_index + 1,
+                    };
+
+                    assert_eq!(index, expected_index, "row {}, column {}", row, column);
+
+                    previous_index = index;
+                }
+            }
+        }
+    }
+
     /// Test getting the length of the data vector based on the number of rows and columns in the
     /// matrix when the product of the number of rows and columns does not overflow.
     #[test]
@@ -1059,6 +1194,55 @@ mod tests {
         assert_eq!(transposed.get_rows(), columns.get());
         assert_eq!(transposed.get_columns(), rows.get());
         assert_eq!(transposed.as_slice(), [0, 3, 1, 4, 2, 5]);
+    }
+
+    /// Test matrix multiplication when the dimensions of the matrix are correct.
+    #[test]
+    fn matrix_mul_correct_dimensions() {
+        let rows_m1 = NonZeroUsize::new(1).unwrap();
+        let columns_m1 = NonZeroUsize::new(3).unwrap();
+        let data_m1: [usize; 3] = [3, 4, 2];
+        let m1: Matrix<usize> = Matrix::from_slice(rows_m1, columns_m1, &data_m1).unwrap();
+
+        let rows_m2 = NonZeroUsize::new(3).unwrap();
+        let columns_m2 = NonZeroUsize::new(4).unwrap();
+        let data_m2: [usize; 12] = [13, 9, 7, 15, 8, 7, 4, 6, 6, 4, 0, 3];
+        let m2: Matrix<usize> = Matrix::from_slice(rows_m2, columns_m2, &data_m2).unwrap();
+
+        let result: Result<Matrix<usize>> = m1.matrix_mul(&m2);
+        assert!(result.is_ok());
+
+        let m3: Matrix<usize> = result.unwrap();
+        assert_eq!(m3.get_rows(), 1);
+        assert_eq!(m3.get_columns(), 4);
+        assert_eq!(m3.as_slice(), &[83, 63, 37, 75]);
+    }
+
+    /// Test matrix multiplication when the dimensions of the matrix are incorrect.
+    #[test]
+    fn matrix_mul_incorrect_dimensions() {
+        let rows_m1 = NonZeroUsize::new(1).unwrap();
+        let columns_m1 = NonZeroUsize::new(3).unwrap();
+        let data_m1: [usize; 3] = [3, 4, 2];
+        let m1: Matrix<usize> = Matrix::from_slice(rows_m1, columns_m1, &data_m1).unwrap();
+
+        let rows_m2 = NonZeroUsize::new(4).unwrap();
+        let columns_m2 = NonZeroUsize::new(3).unwrap();
+        let data_m2: [usize; 12] = [13, 9, 7, 15, 8, 7, 4, 6, 6, 4, 0, 3];
+        let m2: Matrix<usize> = Matrix::from_slice(rows_m2, columns_m2, &data_m2).unwrap();
+
+        let result: Result<Matrix<usize>> = m1.matrix_mul(&m2);
+        assert!(result.is_err());
+
+        let is_correct_error: bool = match result.unwrap_err() {
+            Error::DimensionMismatch => true,
+            _ => false,
+        };
+
+        assert!(
+            is_correct_error,
+            "Expected error Error::DimensionMismatch not satisfied."
+        );
     }
 
     // Test the operators.
