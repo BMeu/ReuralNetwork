@@ -34,6 +34,11 @@ use std::ops::ShrAssign;
 use std::ops::Sub;
 use std::ops::SubAssign;
 
+use rand::distributions::Uniform;
+use rand::rngs::ThreadRng;
+use rand::thread_rng;
+use rand::Rng;
+
 use crate::impl_element_wise_binary_operators;
 use crate::impl_scalar_assign_operators;
 use crate::impl_scalar_binary_operators;
@@ -670,6 +675,50 @@ where
     }
 }
 
+impl Matrix<f64> {
+    // region Initialization
+
+    /// Create a new matrix with the given dimensions and random elements in the inclusive range
+    /// `[0.0, 1.0]` (i.e., including both `0.0` and `1.0`).
+    ///
+    /// The product of the number of `rows` and the number of `columns` must not exceed the maximum
+    /// `usize` value, [`::std::usize::MAX`]. Otherwise, an [`Error::DimensionsTooLarge`] will be
+    /// returned.
+    ///
+    /// # Example
+    ///
+    /// A `2x3` matrix with a default value of `0.25` for all elements can be created with the
+    /// following lines of code:
+    ///
+    /// ```
+    /// use std::num::NonZeroUsize;
+    /// use reural_network::matrix::Matrix;
+    ///
+    /// let rows = NonZeroUsize::new(2).unwrap();
+    /// let columns = NonZeroUsize::new(3).unwrap();
+    /// let matrix: Matrix<f64> = Matrix::from_random(rows, columns).unwrap();
+    /// ```
+    ///
+    /// [`::std::usize::MAX`]: https://doc.rust-lang.org/stable/std/usize/constant.MAX.html
+    /// [`Error::DimensionsTooLarge`]: enum.Error.html#variant.DimensionsTooLarge
+    pub fn from_random(rows: NonZeroUsize, columns: NonZeroUsize) -> Result<Matrix<f64>> {
+        // Get random data in the range of [0.0, 1.0].
+        let length: usize = Matrix::<f64>::get_length_from_rows_and_columns(rows, columns)?;
+        let mut rng: ThreadRng = thread_rng();
+        let mut data: Vec<f64> = Vec::with_capacity(length);
+        data.resize_with(length, || rng.sample(Uniform::new_inclusive(0.0, 1.0)));
+
+        // Return the matrix.
+        Ok(Matrix {
+            rows,
+            columns,
+            data,
+        })
+    }
+
+    // endregion
+}
+
 impl<T> Display for Matrix<T>
 where
     T: Display,
@@ -790,6 +839,49 @@ mod tests {
         let rows: NonZeroUsize = NonZeroUsize::new(::std::usize::MAX).unwrap();
         let columns: NonZeroUsize = NonZeroUsize::new(2).unwrap();
         let matrix_result: Result<Matrix<usize>> = Matrix::new(rows, columns, 0);
+
+        assert!(matrix_result.is_err());
+
+        let is_correct_error: bool = match matrix_result.unwrap_err() {
+            Error::DimensionsTooLarge => true,
+            _ => false,
+        };
+
+        assert!(
+            is_correct_error,
+            "Expected error Error::DimensionsTooLarge not satisfied."
+        );
+    }
+
+    /// Test creating a new matrix with random data with dimensions that do not exceed the maximum
+    /// size.
+    #[test]
+    fn from_random_valid_dimensions() {
+        let rows: NonZeroUsize = NonZeroUsize::new(5).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
+        let matrix_result: Result<Matrix<f64>> = Matrix::from_random(rows, columns);
+
+        assert!(matrix_result.is_ok());
+
+        let matrix: Matrix<f64> = matrix_result.unwrap();
+        assert_eq!(matrix.rows.get(), rows.get());
+        assert_eq!(matrix.columns.get(), columns.get());
+
+        let data: &[f64] = matrix.as_slice();
+        assert_eq!(data.len(), 15);
+        for element in data.iter() {
+            assert!(*element >= 0.0);
+            assert!(*element <= 1.0);
+        }
+    }
+
+    /// Test creating a new matrix with random data with dimensions that not exceed the maximum
+    /// size.
+    #[test]
+    fn from_random_invalid_dimensions() {
+        let rows: NonZeroUsize = NonZeroUsize::new(::std::usize::MAX).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let matrix_result: Result<Matrix<f64>> = Matrix::from_random(rows, columns);
 
         assert!(matrix_result.is_err());
 

@@ -15,3 +15,4 @@ codecov = { repository = "BMeu/ReuralNetwork" }
 travis-ci = { repository = "BMeu/ReuralNetwork" }
 
 [dependencies]
+rand = "0.7"
