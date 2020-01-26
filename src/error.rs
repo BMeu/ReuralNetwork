@@ -30,12 +30,19 @@ pub enum Error {
 
     /// If the dimensions of a matrix exceed the maximum allowed value, this error will be returned.
     DimensionsTooLarge,
+
+    /// If a neural network is created without any layers, this error will be returned.
+    EmptyNetwork,
 }
 
 impl Display for Error {
     /// Format this error using the given formatter.
     fn fmt(&self, formatter: &mut Formatter) -> FmtResult {
         match *self {
+            Error::CellOutOfBounds => write!(
+                formatter,
+                "The cell is not part of the matrix."
+            ),
             Error::DimensionMismatch => write!(
                 formatter,
                 "The dimensions of the matrices must be the same or the length of the slice must match the dimensions of the matrix."
@@ -44,9 +51,9 @@ impl Display for Error {
                 formatter,
                 "The product of rows and columns must not exceed the maximum usize value, ::std::usize::MAX."
             ),
-            Error::CellOutOfBounds => write!(
+            Error::EmptyNetwork => write!(
                 formatter,
-                "The cell is not part of the matrix."
+                "The neural network must have at least one layer."
             ),
         }
     }
@@ -88,6 +95,13 @@ mod tests {
         assert_eq!(format!("{:?}", error), "DimensionsTooLarge");
     }
 
+    /// Test debug formatting a `EmptyNetwork` error.
+    #[test]
+    fn debug_empty_network() {
+        let error = Error::EmptyNetwork;
+        assert_eq!(format!("{:?}", error), "EmptyNetwork");
+    }
+
     /// Test formatting a `CellOutOfBounds` error.
     #[test]
     fn fmt_cell_out_of_bounds() {
@@ -115,6 +129,16 @@ mod tests {
         );
     }
 
+    /// Test formatting a `EmptyNetwork` error.
+    #[test]
+    fn fmt_empty_network() {
+        let error = Error::EmptyNetwork;
+        assert_eq!(
+            format!("{}", error),
+            "The neural network must have at least one layer."
+        );
+    }
+
     /// Test getting the source of a `CellOutOfBounds` error.
     #[test]
     fn source_cell_out_of_bounds() {
@@ -133,6 +157,13 @@ mod tests {
     #[test]
     fn source_dimensions_too_large() {
         let error = Error::DimensionsTooLarge;
+        assert!(error.source().is_none());
+    }
+
+    /// Test getting the source of a `EmptyNetwork` error.
+    #[test]
+    fn source_empty_network() {
+        let error = Error::EmptyNetwork;
         assert!(error.source().is_none());
     }
 }
