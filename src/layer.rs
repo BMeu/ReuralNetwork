@@ -18,7 +18,7 @@ use crate::Result;
 ///
 /// The layer can be used as an input, hidden, or output layer.
 #[derive(Debug)]
-struct Layer {
+pub struct Layer {
     /// The weights for this layer's input.
     ///
     /// This is a `o x i` matrix where `o` is the number of this layer's output nodes and `i`
