@@ -9,14 +9,15 @@
 
 use std::num::NonZeroUsize;
 
-use reural_network::matrix::Matrix;
+use reural_network::NeuralNetwork;
+use reural_network::NeuralNetworkBuilder;
 
 /// The main function.
 fn main() {
-    let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
-    let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
-    let data: [f64; 6] = [0.25, 1.33, -0.1, 1.0, -2.73, 1.2];
-    let matrix: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
+    let neural_network: NeuralNetwork = NeuralNetworkBuilder::new(NonZeroUsize::new(3).unwrap())
+        .add_hidden_layer(NonZeroUsize::new(7).unwrap())
+        .add_output_layer(NonZeroUsize::new(10).unwrap())
+        .unwrap();
 
-    println!("{}", matrix);
+    println!("{:?}", neural_network);
 }

@@ -54,10 +54,10 @@ macro_rules! impl_element_wise_binary_operators {
             add,
             +,
             "Add each element in `self` to the corresponding element in `other`.",
-            f64,
-            [0.25, 1.33, -0.1, 1.0, -2.73, 1.2],
-            [0.25, 1.33, -0.1, 1.0, -2.73, 1.2],
-            [0.5, 2.66, -0.2, 2.0, -5.46, 2.4]
+            i64,
+            [25, 133, -1, 10, -273, 12],
+            [ 2, 133,  3, 10,  273,  0],
+            [27, 266,  2, 20,    0, 12]
         );
 
         // Bitwise AND.
@@ -105,10 +105,10 @@ macro_rules! impl_element_wise_binary_operators {
             div,
             /,
             "Divide each element in `self` by the corresponding element in `other`.",
-            f64,
-            [1.0, 1.33, -0.1, 4.0, -2.73, 4.0],
-            [2.0, 1.33, -4.0, -2.0, 2.73, 0.1],
-            [0.5, 1.0, 0.025, -2.0, -1.0, 40.0]
+            i64,
+            [10, 333, -12,  7, -30, 0],
+            [ 2,   3,  -4, -7,  10, 3],
+            [ 5, 111,   3, -1,  -3, 0]
         );
 
         // Multiplication.
@@ -118,10 +118,10 @@ macro_rules! impl_element_wise_binary_operators {
             *,
             "Multiply each element in `self` to the corresponding element in `other`, i.e.\
              calculate the Hadamard product of `self` and `other`.",
-            f64,
-            [0.25, 1.0, -0.3, -1.0, 2.73, 1.2],
-            [2.0, 0.25, -0.3, 2.0, -2.0, 1.2],
-            [0.5, 0.25, 0.09, -2.0, -5.46, 1.44]
+            i64,
+            [10, 333, -12,   7,  -30, 0],
+            [ 2,   3,  -4,  -7,   10, 3],
+            [20, 999,  48, -49, -300, 0]
         );
 
         // Remainder.
@@ -169,10 +169,10 @@ macro_rules! impl_element_wise_binary_operators {
             sub,
             -,
             "Subtract each element in `other` from the corresponding element in `self`.",
-            f64,
-            [0.25, 1.0, -0.1, 1.0, -2.73, 1.3],
-            [0.25, 0.4, 0.1, -1.0, -2.0, 3.6],
-            [0.0, 0.6, -0.2, 2.0, -0.73, -2.3]
+            i64,
+            [10, 333, -12,  7, -30,  0],
+            [ 2,   3,  -4, -7,  10,  3],
+            [ 8, 330,  -8, 14, -40, -3]
         );
     };
 }
@@ -343,7 +343,8 @@ macro_rules! impl_element_wise_binary_operator {
             #[doc = $documentation]
             fn $fn(self, other: $crate::specify_matrix_type!($rhs_access)) -> Self::Output {
                 // For element-wise operations, the dimensions of both matrices must be the same.
-                if self.get_rows() != other.get_rows() || self.get_columns() != other.get_columns()
+                if     self.get_number_of_rows() != other.get_number_of_rows()
+                    || self.get_number_of_columns() != other.get_number_of_columns()
                 {
                     return Err(Error::DimensionMismatch);
                 }
@@ -402,11 +403,11 @@ macro_rules! test_element_wise_binary_operators {
         // Addition.
         $crate::test_element_wise_binary_operator_with_references!(
             element_wise_add,
-            f64,
-            [0.25, 1.33, -0.1, 1.0, -2.73, 1.2],
-            [0.25, 1.33, -0.1, 1.0, -2.73, 1.2],
+            i64,
+            [25, 33, -1, 0, -73, 2],
+            [25, 33, -1, 0, -73, 2],
             +,
-            [0.5, 2.66, -0.2, 2.0, -5.46, 2.4]
+            [50, 66, -2, 0, -146, 4]
         );
 
         // Bitwise AND.
@@ -442,21 +443,21 @@ macro_rules! test_element_wise_binary_operators {
         // Division.
         $crate::test_element_wise_binary_operator_with_references!(
             element_wise_div,
-            f64,
-            [1.0, 1.33, -0.1, 4.0, -2.73, 4.0],
-            [2.0, 1.33, -4.0, -2.0, 2.73, 0.1],
+            i64,
+            [44, 9, -1,  4, -9, 0],
+            [2,  3, -1, -2, -3, 42],
             /,
-            [0.5, 1.0, 0.025, -2.0, -1.0, 40.0]
+            [22, 3,  1, -2,  3, 0]
         );
 
         // Multiplication.
         $crate::test_element_wise_binary_operator_with_references!(
             element_wise_mul,
-            f64,
-            [0.25, 1.0, -0.3, -1.0, 2.73, 1.2],
-            [2.0, 0.25, -0.3, 2.0, -2.0, 1.2],
+            i64,
+            [25,  1, -3,  0, 3, 12],
+            [ 2, -2, -3, 42, 3, 12],
             *,
-            [0.5, 0.25, 0.09, -2.0, -5.46, 1.44]
+            [50, -2,  9,  0, 9, 144]
         );
 
         // Remainder.
@@ -492,11 +493,11 @@ macro_rules! test_element_wise_binary_operators {
         // Subtraction.
         $crate::test_element_wise_binary_operator_with_references!(
             element_wise_sub,
-            f64,
-            [0.25, 1.0, -0.1, 1.0, -2.73, 1.3],
-            [0.25, 0.4, 0.1, -1.0, -2.0, 3.6],
+            i64,
+            [25, 1, -1,  0, 273, -13],
+            [25, 0, -5,  5,  73,  10],
             -,
-            [0.0, 0.6, -0.2, 2.0, -0.73, -2.3]
+            [ 0, 1,  4, -5, 200, -23]
         );
     };
 }
@@ -547,7 +548,7 @@ macro_rules! test_element_wise_binary_operator_with_references {
         mod $mod {
             use super::*;
 
-            /// Owned to owned.
+            // Owned to owned.
             $crate::test_element_wise_binary_operator!(
                 owned_to_owned,
                 $data_type,
@@ -559,7 +560,7 @@ macro_rules! test_element_wise_binary_operator_with_references {
                 $expected_result
             );
 
-            /// Owned to referenced.
+            // Owned to referenced.
             $crate::test_element_wise_binary_operator!(
                 owned_to_referenced,
                 $data_type,
@@ -571,7 +572,7 @@ macro_rules! test_element_wise_binary_operator_with_references {
                 $expected_result
             );
 
-            /// Referenced to owned.
+            // Referenced to owned.
             $crate::test_element_wise_binary_operator!(
                 referenced_to_owned,
                 $data_type,
@@ -583,7 +584,7 @@ macro_rules! test_element_wise_binary_operator_with_references {
                 $expected_result
             );
 
-            /// Referenced to referenced.
+            // Referenced to referenced.
             $crate::test_element_wise_binary_operator!(
                 referenced_to_referenced,
                 $data_type,
@@ -678,14 +679,11 @@ macro_rules! test_element_wise_binary_operator {
 
                 let result = $crate::access_variable!($lhs_access matrix) $operator
                              $crate::access_variable!($rhs_access other);
-                assert!(result.is_err());
 
-                let is_correct_error: bool = match result.unwrap_err() {
-                    Error::DimensionMismatch => true,
-                    _ => false,
-                };
-
-                assert!(is_correct_error, "Expected error Error::DimensionMismatch not satisfied.");
+                assert!(
+                    matches!(result, Err(Error::DimensionMismatch)),
+                    "Expected error Error::DimensionMismatch not satisfied."
+                );
             }
         }
     };

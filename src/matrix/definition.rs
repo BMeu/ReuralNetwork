@@ -197,7 +197,7 @@ impl<T> Matrix<T> {
     }
 
     /// Get the number of columns in the matrix.
-    pub fn get_columns(&self) -> usize {
+    pub fn get_number_of_columns(&self) -> usize {
         self.columns.get()
     }
 
@@ -271,7 +271,7 @@ impl<T> Matrix<T> {
     }
 
     /// Get the number of rows in the matrix.
-    pub fn get_rows(&self) -> usize {
+    pub fn get_number_of_rows(&self) -> usize {
         self.rows.get()
     }
 
@@ -308,8 +308,8 @@ impl<T> Matrix<T> {
     where
         F: FnMut(&mut T, usize, usize),
     {
-        for row in 0..self.get_rows() {
-            for column in 0..self.get_columns() {
+        for row in 0..self.get_number_of_rows() {
+            for column in 0..self.get_number_of_columns() {
                 unsafe {
                     // Since we iterate over all rows and columns, they are always valid and we
                     // don't have to check any invariants.
@@ -428,7 +428,7 @@ where
     /// [`get_unchecked`]: #method.get_unchecked
     /// [`Error::CellOutOfBounds`]: enum.Error.html#variant.CellOutOfBounds
     pub fn get(&self, row: usize, column: usize) -> Result<T> {
-        if row >= self.get_rows() || column >= self.get_columns() {
+        if row >= self.get_number_of_rows() || column >= self.get_number_of_columns() {
             return Err(Error::CellOutOfBounds);
         }
 
@@ -489,8 +489,8 @@ where
     where
         F: Fn(T, usize, usize) -> T,
     {
-        for row in 0..self.get_rows() {
-            for column in 0..self.get_columns() {
+        for row in 0..self.get_number_of_rows() {
+            for column in 0..self.get_number_of_columns() {
                 unsafe {
                     // Since we iterate over all rows and columns, they are always valid and we
                     // don't have to check any invariants.
@@ -531,8 +531,8 @@ where
     /// let matrix: Matrix<usize> = Matrix::from_slice(rows, columns, &[0, 1, 2, 3, 4, 5]).unwrap();
     ///
     /// let transposed: Matrix<usize> = matrix.transpose();
-    /// assert_eq!(transposed.get_rows(), 3);
-    /// assert_eq!(transposed.get_columns(), 2);
+    /// assert_eq!(transposed.get_number_of_rows(), 3);
+    /// assert_eq!(transposed.get_number_of_columns(), 2);
     /// assert_eq!(transposed.as_slice(), &[0, 3, 1, 4, 2, 5]);
     /// ```
     pub fn transpose(&self) -> Matrix<T> {
@@ -618,15 +618,15 @@ where
     /// // [58    64 ]
     /// // [139   154]
     /// let m3: Matrix<usize> = m1.matrix_mul(&m2).unwrap();
-    /// assert_eq!(m3.get_rows(), 2);
-    /// assert_eq!(m3.get_columns(), 2);
+    /// assert_eq!(m3.get_number_of_rows(), 2);
+    /// assert_eq!(m3.get_number_of_columns(), 2);
     /// assert_eq!(m3.as_slice(), &[58, 64, 139, 154]);
     /// ```
     ///
     /// [`Error::DimensionMismatch`]: enum.Error.html#variant.DimensionMismatch
     /// [`Error::DimensionsTooLarge`]: enum.Error.html#variant.DimensionsTooLarge
     pub fn matrix_mul(&self, other: &Matrix<T>) -> Result<Matrix<T>> {
-        if self.get_columns() != other.get_rows() {
+        if self.get_number_of_columns() != other.get_number_of_rows() {
             return Err(Error::DimensionMismatch);
         }
 
@@ -641,8 +641,8 @@ where
             data: Vec::with_capacity(size),
         };
 
-        for row in 0..result.get_rows() {
-            for column in 0..result.get_columns() {
+        for row in 0..result.get_number_of_rows() {
+            for column in 0..result.get_number_of_columns() {
                 // All row and column values are valid so it is safe to use these unsafe and
                 // unchecked methods.
                 unsafe {
@@ -654,7 +654,7 @@ where
                     let mut element: T =
                         self.get_unchecked(row, 0) * other.get_unchecked(0, column);
 
-                    for i in 1..self.get_columns() {
+                    for i in 1..self.get_number_of_columns() {
                         let product: T =
                             self.get_unchecked(row, i) * other.get_unchecked(i, column);
 
@@ -719,6 +719,20 @@ impl Matrix<f64> {
     // endregion
 }
 
+impl<T> Clone for Matrix<T>
+where
+    T: Clone,
+{
+    /// Clone this matrix.
+    fn clone(&self) -> Self {
+        Matrix {
+            rows: self.rows,
+            columns: self.columns,
+            data: self.data.clone(),
+        }
+    }
+}
+
 impl<T> Display for Matrix<T>
 where
     T: Display,
@@ -754,11 +768,11 @@ where
         // Align all columns, but each column may have a different alignment. Thus, first iterate
         // over the columns, then the rows, to get the width of each column from all values in the
         // column.
-        let mut column_widths: Vec<usize> = Vec::with_capacity(self.get_columns());
-        for column in 0..self.get_columns() {
+        let mut column_widths: Vec<usize> = Vec::with_capacity(self.get_number_of_columns());
+        for column in 0..self.get_number_of_columns() {
             // Get the maximum width of the current column.
             let mut max_width: usize = 0;
-            for row in 0..self.get_rows() {
+            for row in 0..self.get_number_of_rows() {
                 // Do not use self.get_unchecked() here as this requires T to implement Copy.
                 unsafe {
                     // We iterate over the rows and columns and thus, they are always valid.
@@ -773,10 +787,10 @@ where
         }
 
         // Now, go through each row and format each value with the width of its column.
-        let mut rows: Vec<String> = Vec::with_capacity(self.get_rows());
-        for row in 0..self.get_rows() {
+        let mut rows: Vec<String> = Vec::with_capacity(self.get_number_of_rows());
+        for row in 0..self.get_number_of_rows() {
             // For each row, collect the formatted values first.
-            let mut row_values: Vec<String> = Vec::with_capacity(self.get_columns());
+            let mut row_values: Vec<String> = Vec::with_capacity(self.get_number_of_columns());
             for (column, width) in column_widths.iter().enumerate() {
                 unsafe {
                     // We iterate over the rows and columns and thus, they are always valid.
@@ -802,6 +816,36 @@ where
     }
 }
 
+impl<T> Eq for Matrix<T> where T: Eq {}
+
+impl<T> PartialEq for Matrix<T>
+where
+    T: PartialEq,
+{
+    /// Check if two matrices are equal to each other.
+    ///
+    /// Two matrices `A` and `B` are equal to each other if their dimensions are the same and all
+    /// elements in matrix `A` are equal to their corresponding element in matrix `B` (i.e. if
+    /// element `A_i,j == B_i,j`.
+    fn eq(&self, other: &Self) -> bool {
+        if self.get_number_of_columns() != other.get_number_of_columns() {
+            return false;
+        }
+
+        if self.get_number_of_rows() != other.get_number_of_rows() {
+            return false;
+        }
+
+        for (e1, e2) in self.as_slice().iter().zip(other.as_slice()) {
+            if e1 != e2 {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
 impl_scalar_assign_operators!();
 impl_element_wise_binary_operators!();
 impl_scalar_binary_operators!();
@@ -809,8 +853,11 @@ impl_unary_operators!();
 
 #[cfg(test)]
 mod tests {
-
     use super::*;
+
+    use approx::assert_relative_eq;
+    use approx::assert_relative_ne;
+
     use crate::test_element_wise_binary_operators;
     use crate::test_scalar_assign_operators;
     use crate::test_scalar_binary_operators;
@@ -840,15 +887,8 @@ mod tests {
         let columns: NonZeroUsize = NonZeroUsize::new(2).unwrap();
         let matrix_result: Result<Matrix<usize>> = Matrix::new(rows, columns, 0);
 
-        assert!(matrix_result.is_err());
-
-        let is_correct_error: bool = match matrix_result.unwrap_err() {
-            Error::DimensionsTooLarge => true,
-            _ => false,
-        };
-
         assert!(
-            is_correct_error,
+            matches!(matrix_result, Err(Error::DimensionsTooLarge)),
             "Expected error Error::DimensionsTooLarge not satisfied."
         );
     }
@@ -883,15 +923,8 @@ mod tests {
         let columns: NonZeroUsize = NonZeroUsize::new(2).unwrap();
         let matrix_result: Result<Matrix<f64>> = Matrix::from_random(rows, columns);
 
-        assert!(matrix_result.is_err());
-
-        let is_correct_error: bool = match matrix_result.unwrap_err() {
-            Error::DimensionsTooLarge => true,
-            _ => false,
-        };
-
         assert!(
-            is_correct_error,
+            matches!(matrix_result, Err(Error::DimensionsTooLarge)),
             "Expected error Error::DimensionsTooLarge not satisfied."
         );
     }
@@ -921,15 +954,8 @@ mod tests {
         let data: [usize; 15] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
         let matrix_result: Result<Matrix<usize>> = Matrix::from_slice(rows, columns, &data);
 
-        assert!(matrix_result.is_err());
-
-        let is_correct_error: bool = match matrix_result.unwrap_err() {
-            Error::DimensionsTooLarge => true,
-            _ => false,
-        };
-
         assert!(
-            is_correct_error,
+            matches!(matrix_result, Err(Error::DimensionsTooLarge)),
             "Expected error Error::DimensionsTooLarge not satisfied."
         );
     }
@@ -943,17 +969,22 @@ mod tests {
         let data: [usize; 5] = [0, 1, 2, 3, 4];
         let matrix_result: Result<Matrix<usize>> = Matrix::from_slice(rows, columns, &data);
 
-        assert!(matrix_result.is_err());
-
-        let is_correct_error: bool = match matrix_result.unwrap_err() {
-            Error::DimensionMismatch => true,
-            _ => false,
-        };
-
         assert!(
-            is_correct_error,
+            matches!(matrix_result, Err(Error::DimensionMismatch)),
             "Expected error Error::DimensionMismatch not satisfied."
         );
+    }
+
+    /// Test cloning a matrix.
+    #[test]
+    fn clone() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
+        let data: [usize; 6] = [0, 1, 2, 3, 4, 5];
+        let original: Matrix<usize> = Matrix::from_slice(rows, columns, &data).unwrap();
+
+        let copy: Matrix<usize> = original.clone();
+        assert_eq!(original, copy);
     }
 
     // endregion
@@ -982,7 +1013,7 @@ mod tests {
             data: vec![0, 1],
         };
 
-        assert_eq!(matrix.get_columns(), columns);
+        assert_eq!(matrix.get_number_of_columns(), columns);
     }
 
     /// Test getting the unchecked index for given rows and columns.
@@ -1022,8 +1053,8 @@ mod tests {
         let matrix: Matrix<usize> = Matrix::new(rows, columns, 0).unwrap();
 
         let mut previous_index: usize = 0;
-        for row in 0..matrix.get_rows() {
-            for column in 0..matrix.get_columns() {
+        for row in 0..matrix.get_number_of_rows() {
+            for column in 0..matrix.get_number_of_columns() {
                 unsafe {
                     let index: usize = matrix.get_index_unchecked(row, column);
 
@@ -1064,15 +1095,8 @@ mod tests {
         let length: Result<usize> =
             Matrix::<usize>::get_length_from_rows_and_columns(rows, columns);
 
-        assert!(length.is_err());
-
-        let is_correct_error: bool = match length.unwrap_err() {
-            Error::DimensionsTooLarge => true,
-            _ => false,
-        };
-
         assert!(
-            is_correct_error,
+            matches!(length, Err(Error::DimensionsTooLarge)),
             "Expected error Error::DimensionsTooLarge not satisfied."
         );
     }
@@ -1137,7 +1161,7 @@ mod tests {
             data: vec![0, 1],
         };
 
-        assert_eq!(matrix.get_rows(), rows);
+        assert_eq!(matrix.get_number_of_rows(), rows);
     }
 
     /// Test getting a value when the row and column are valid.
@@ -1163,43 +1187,25 @@ mod tests {
 
         // Both the row and column are invalid.
         let value: Result<u64> = matrix.get(rows.get() + 1, columns.get() + 2);
-        assert!(value.is_err());
-
-        let is_correct_error: bool = match value.unwrap_err() {
-            Error::CellOutOfBounds => true,
-            _ => false,
-        };
 
         assert!(
-            is_correct_error,
+            matches!(value, Err(Error::CellOutOfBounds)),
             "Expected error Error::CellOutOfBounds not satisfied."
         );
 
         // Only the row is invalid.
         let value: Result<u64> = matrix.get(rows.get() + 1, columns.get());
-        assert!(value.is_err());
-
-        let is_correct_error: bool = match value.unwrap_err() {
-            Error::CellOutOfBounds => true,
-            _ => false,
-        };
 
         assert!(
-            is_correct_error,
+            matches!(value, Err(Error::CellOutOfBounds)),
             "Expected error Error::CellOutOfBounds not satisfied."
         );
 
         // Only the column is invalid.
         let value: Result<u64> = matrix.get(rows.get(), columns.get() + 2);
-        assert!(value.is_err());
-
-        let is_correct_error: bool = match value.unwrap_err() {
-            Error::CellOutOfBounds => true,
-            _ => false,
-        };
 
         assert!(
-            is_correct_error,
+            matches!(value, Err(Error::CellOutOfBounds)),
             "Expected error Error::CellOutOfBounds not satisfied."
         );
     }
@@ -1268,8 +1274,8 @@ mod tests {
 
         // Convert Celsius to Kelvin.
         matrix.map_ref_mut(|celsius, _row, _column| *celsius += 273.15);
-        assert_eq!(
-            matrix.as_slice(),
+        assert_relative_eq!(
+            *matrix.as_slice(),
             [273.15, 283.15, 298.15, 323.15, 348.15, 373.15]
         );
     }
@@ -1283,8 +1289,8 @@ mod tests {
         let matrix: Matrix<usize> = Matrix::from_slice(rows, columns, &data).unwrap();
 
         let transposed: Matrix<usize> = matrix.transpose();
-        assert_eq!(transposed.get_rows(), columns.get());
-        assert_eq!(transposed.get_columns(), rows.get());
+        assert_eq!(transposed.get_number_of_rows(), columns.get());
+        assert_eq!(transposed.get_number_of_columns(), rows.get());
         assert_eq!(transposed.as_slice(), [0, 3, 1, 4, 2, 5]);
     }
 
@@ -1305,8 +1311,8 @@ mod tests {
         assert!(result.is_ok());
 
         let m3: Matrix<usize> = result.unwrap();
-        assert_eq!(m3.get_rows(), 1);
-        assert_eq!(m3.get_columns(), 4);
+        assert_eq!(m3.get_number_of_rows(), 1);
+        assert_eq!(m3.get_number_of_columns(), 4);
         assert_eq!(m3.as_slice(), &[83, 63, 37, 75]);
     }
 
@@ -1324,17 +1330,64 @@ mod tests {
         let m2: Matrix<usize> = Matrix::from_slice(rows_m2, columns_m2, &data_m2).unwrap();
 
         let result: Result<Matrix<usize>> = m1.matrix_mul(&m2);
-        assert!(result.is_err());
-
-        let is_correct_error: bool = match result.unwrap_err() {
-            Error::DimensionMismatch => true,
-            _ => false,
-        };
 
         assert!(
-            is_correct_error,
+            matches!(result, Err(Error::DimensionMismatch)),
             "Expected error Error::DimensionMismatch not satisfied."
         );
+    }
+
+    /// Test if matrices are partially equal for two matrices that are equal to each other.
+    #[test]
+    fn partial_eq_same_matrices() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
+        let data: [f64; 6] = [0.0, -1.2, 4.3, 89.9, 5.0, 6.0];
+        let m1: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
+        let m2: Matrix<f64> = Matrix::from_slice(rows, columns, &data).unwrap();
+
+        // The matrices are equal, bot not unequal.
+        assert_eq!(m1, m2);
+        assert_eq!(m1 != m2, false);
+    }
+
+    /// Test if matrices are partially equal to each other for two matrices that have differing
+    /// numbers of columns.
+    #[test]
+    fn partial_eq_different_columns() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
+        let m1: Matrix<f64> = Matrix::new(rows, columns, 0.0).unwrap();
+        let m2: Matrix<f64> = Matrix::new(rows, rows, 0.0).unwrap();
+
+        assert_ne!(m1, m2);
+    }
+
+    /// Test if matrices are partially equal to each other for two matrices that have different
+    /// data.
+    #[test]
+    fn partial_eq_different_data() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
+        let data1: &[f64] = &[0.0, -1.2, 4.3, 89.9, 5.0, 6.0];
+        let data2: &[f64] = &[0.0, -1.2, 4.3, 89.9, 5.0, 6.1];
+        let m1: Matrix<f64> = Matrix::from_slice(rows, columns, data1).unwrap();
+        let m2: Matrix<f64> = Matrix::from_slice(rows, columns, data2).unwrap();
+
+        assert_relative_ne!(data1, data2);
+        assert_ne!(m1, m2);
+    }
+
+    /// Test if matrices are partially equal to each other for two matrices that have differing
+    /// numbers of rows.
+    #[test]
+    fn partial_eq_different_rows() {
+        let rows: NonZeroUsize = NonZeroUsize::new(2).unwrap();
+        let columns: NonZeroUsize = NonZeroUsize::new(3).unwrap();
+        let m1: Matrix<f64> = Matrix::new(rows, columns, 0.0).unwrap();
+        let m2: Matrix<f64> = Matrix::new(columns, columns, 0.0).unwrap();
+
+        assert_ne!(m1, m2);
     }
 
     // Test the operators.

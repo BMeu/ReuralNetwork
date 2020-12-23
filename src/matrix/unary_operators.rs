@@ -198,10 +198,10 @@ macro_rules! test_unary_operators {
         // Negation.
         $crate::test_unary_operator_with_references!(
             neg,
-            f64,
-            [0.25, 1.33, -0.1, 0.0, -2.73, 1.2],
+            i64,
+            [4, 1, -1, 0, -2, 12],
             -,
-            [-0.25, -1.33, 0.1, 0.0, 2.73, -1.2]
+            [-4, -1, 1, 0, 2, -12]
         );
 
         // Logical negation.
@@ -251,7 +251,7 @@ macro_rules! test_unary_operator_with_references {
         mod $mod {
             use super::*;
 
-            /// Owned.
+            // Owned.
             $crate::test_unary_operator!(
                 owned,
                 $data_type,
@@ -261,7 +261,7 @@ macro_rules! test_unary_operator_with_references {
                 $expected_result
             );
 
-            /// Referenced.
+            // Referenced.
             $crate::test_unary_operator!(
                 referenced,
                 $data_type,

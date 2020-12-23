@@ -337,11 +337,11 @@ macro_rules! test_scalar_binary_operators {
         // Addition.
         $crate::test_scalar_binary_operator_with_references!(
             scalar_add,
-            f64,
-            [0.25, 1.33, -0.1, 1.0, -2.73, 1.2],
-            0.25,
+            i8,
+            [7, 5, -6, 0, 3, 1],
+            42,
             +,
-            [0.5, 1.58, 0.15, 1.25, -2.48, 1.45]
+            [49, 47, 36, 42, 45, 43]
         );
 
         // Bitwise AND.
@@ -377,21 +377,21 @@ macro_rules! test_scalar_binary_operators {
         // Division.
         $crate::test_scalar_binary_operator_with_references!(
             scalar_div,
-            f64,
-            [1.0, 1.33, -0.1, 4.0, -2.73, 80.0],
-            2.0,
+            i8,
+            [4, 2, -6, 4, -10, 80],
+            2,
             /,
-            [0.5, 0.665, -0.05, 2.0, -1.365, 40.0]
+            [2, 1, -3, 2, -5, 40]
         );
 
         // Multiplication.
         $crate::test_scalar_binary_operator_with_references!(
             scalar_mul,
-            f64,
-            [0.25, 1.0, -0.3, -1.0, 2.73, 1.2],
-            2.0,
+            i64,
+            [25, 1, -3, -1, 2, 1],
+            2,
             *,
-            [0.5, 2.0, -0.6, -2.0, 5.46, 2.4]
+            [50, 2, -6, -2, 4, 2]
         );
 
         // Remainder.
@@ -427,11 +427,11 @@ macro_rules! test_scalar_binary_operators {
         // Subtraction.
         $crate::test_scalar_binary_operator_with_references!(
             scalar_sub,
-            f64,
-            [0.25, 1.0, -0.1, -1.0, -2.73, 1.3],
-            0.25,
+            i8,
+            [5, 1, -10, -2, 25, 13],
+            3,
             -,
-            [0.0, 0.75, -0.35, -1.25, -2.98, 1.05]
+            [2, -2, -13, -5, 22, 10]
         );
     };
 }
@@ -476,7 +476,7 @@ macro_rules! test_scalar_binary_operator_with_references {
         mod $mod {
             use super::*;
 
-            /// Owned to owned.
+            // Owned to owned.
             $crate::test_scalar_binary_operator!(
                 owned,
                 $data_type,
@@ -487,7 +487,7 @@ macro_rules! test_scalar_binary_operator_with_references {
                 $expected_result
             );
 
-            /// Referenced to owned.
+            // Referenced to owned.
             $crate::test_scalar_binary_operator!(
                 referenced,
                 $data_type,
@@ -521,7 +521,7 @@ macro_rules! test_scalar_binary_operator_with_references {
 ///
 /// ```text
 /// test_scalar_binary_operator!(
-///     owne,
+///     own,
 ///     f64,
 ///     [0.0, 2.3, -1.2, 42.1337, 1.0, -4.4],
 ///     0.1,

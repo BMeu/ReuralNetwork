@@ -12,6 +12,7 @@ pub use self::error::Result;
 use self::layer::Layer;
 use self::matrix::Matrix;
 pub use self::neural_network::NeuralNetwork;
+pub use self::neural_network_builder::NeuralNetworkBuilder;
 
 // TODO: Make the matrix module private once main.rs doesn't use it anymore.
 mod error;
@@ -19,3 +20,4 @@ mod layer;
 mod macros;
 pub mod matrix;
 mod neural_network;
+mod neural_network_builder;

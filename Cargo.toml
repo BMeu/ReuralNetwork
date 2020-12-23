@@ -16,3 +16,6 @@ travis-ci = { repository = "BMeu/ReuralNetwork" }
 
 [dependencies]
 rand = "0.7"
+
+[dev-dependencies]
+approx = "0.3"

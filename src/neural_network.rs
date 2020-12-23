@@ -35,12 +35,22 @@ impl NeuralNetwork {
     /// will be returned.
     ///
     /// [`Error::EmptyNetwork`]: ../enum.Error.html#variant.EmptyNetwork
-    fn new(layers: Vec<Layer>) -> Result<NeuralNetwork> {
+    pub(crate) fn new(layers: Vec<Layer>) -> Result<NeuralNetwork> {
         if layers.is_empty() {
             return Err(Error::EmptyNetwork);
         }
 
         Ok(NeuralNetwork { layers })
+    }
+
+    // endregion
+
+    // region Getters
+
+    /// Get a slice of all layers in the neural network.
+    #[cfg(test)]
+    pub(crate) fn get_layers(&self) -> &[Layer] {
+        self.layers.as_slice()
     }
 
     // endregion
@@ -57,7 +67,7 @@ impl NeuralNetwork {
     /// [`Error::DimensionMismatch`]: ../enum.Error.html#variant.DimensionMismatch
     pub fn predict(&self, input: Matrix<f64>) -> Result<Matrix<f64>> {
         // The input matrix must have only one column.
-        if input.get_columns() != 1 {
+        if input.get_number_of_columns() != 1 {
             return Err(Error::DimensionMismatch);
         }
 
@@ -111,17 +121,37 @@ mod tests {
     fn new_without_layers() {
         let layers: Vec<Layer> = Vec::new();
         let neural_network_result: Result<NeuralNetwork> = NeuralNetwork::new(layers);
-        assert!(neural_network_result.is_err());
-
-        let is_correct_error: bool = match neural_network_result.unwrap_err() {
-            Error::EmptyNetwork => true,
-            _ => false,
-        };
 
         assert!(
-            is_correct_error,
+            matches!(neural_network_result, Err(Error::EmptyNetwork)),
             "Expected error Error::EmptyNetwork not satisfied."
         );
+    }
+
+    // endregion
+
+    // region Getters
+
+    /// Test getting all layers.
+    #[test]
+    fn get_layers() {
+        let input_nodes = NonZeroUsize::new(3).unwrap();
+        let nodes_hidden_layer_1 = NonZeroUsize::new(5).unwrap();
+        let nodes_hidden_layer_2 = NonZeroUsize::new(2).unwrap();
+        let output_nodes = NonZeroUsize::new(1).unwrap();
+
+        let mut layers: Vec<Layer> = Vec::with_capacity(3);
+        layers.push(Layer::new(input_nodes, nodes_hidden_layer_1).unwrap());
+        layers.push(Layer::new(nodes_hidden_layer_1, nodes_hidden_layer_2).unwrap());
+        layers.push(Layer::new(nodes_hidden_layer_2, output_nodes).unwrap());
+
+        let expected_layers: Vec<Layer> = layers.clone();
+
+        let neural_network_result: Result<NeuralNetwork> = NeuralNetwork::new(layers);
+        assert!(neural_network_result.is_ok());
+
+        let neural_network: NeuralNetwork = neural_network_result.unwrap();
+        assert_eq!(neural_network.get_layers(), expected_layers.as_slice());
     }
 
     // endregion
@@ -149,8 +179,8 @@ mod tests {
         assert!(prediction_result.is_ok());
 
         let prediction: Matrix<f64> = prediction_result.unwrap();
-        assert_eq!(prediction.get_rows(), output_nodes.get());
-        assert_eq!(prediction.get_columns(), 1);
+        assert_eq!(prediction.get_number_of_rows(), output_nodes.get());
+        assert_eq!(prediction.get_number_of_columns(), 1);
         for element in prediction.as_slice() {
             assert!(*element >= 0.0);
             assert!(*element <= 1.0);
@@ -174,15 +204,9 @@ mod tests {
 
         let input: Matrix<f64> = Matrix::new(input_nodes, output_nodes, 1.0).unwrap();
         let prediction_result: Result<Matrix<f64>> = neural_network.predict(input);
-        assert!(prediction_result.is_err());
-
-        let is_correct_error: bool = match prediction_result.unwrap_err() {
-            Error::DimensionMismatch => true,
-            _ => false,
-        };
 
         assert!(
-            is_correct_error,
+            matches!(prediction_result, Err(Error::DimensionMismatch)),
             "Expected error Error::DimensionMismatch not satisfied."
         );
     }
@@ -206,15 +230,9 @@ mod tests {
 
         let input: Matrix<f64> = Matrix::new(output_nodes, one, 1.0).unwrap();
         let prediction_result: Result<Matrix<f64>> = neural_network.predict(input);
-        assert!(prediction_result.is_err());
-
-        let is_correct_error: bool = match prediction_result.unwrap_err() {
-            Error::DimensionMismatch => true,
-            _ => false,
-        };
 
         assert!(
-            is_correct_error,
+            matches!(prediction_result, Err(Error::DimensionMismatch)),
             "Expected error Error::DimensionMismatch not satisfied."
         );
     }

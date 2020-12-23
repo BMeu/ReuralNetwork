@@ -62,9 +62,7 @@ impl Display for Error {
 impl error::Error for Error {
     /// The underlying source of this error, if any.
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
-        match *self {
-            _ => None,
-        }
+        None
     }
 }
 

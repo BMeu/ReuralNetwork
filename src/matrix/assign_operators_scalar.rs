@@ -55,11 +55,11 @@ macro_rules! impl_scalar_assign_operators {
             +=,
             $crate::doc_scalar_assign_operator!(
                 "Add `other` to all elements in `self`.",
-                f64,
-                [0.25, 1.33, -0.1, 1.0, -2.73, 1.2],
-                1.3,
+                i64,
+                [25, 133, -1, 1, -273, 12],
+                13,
                 +=,
-                [1.55, 2.63, 1.2, 2.3, -1.43, 2.5]
+                [38, 146, 12, 14, -260, 25]
             )
         );
 
@@ -115,11 +115,11 @@ macro_rules! impl_scalar_assign_operators {
             /=,
             $crate::doc_scalar_assign_operator!(
                 "Divide each element in `self` by `other`.",
-                f64,
-                [1.0, 1.33, -0.1, 4.0, -2.73, 80.0],
-                2.0,
+                i64,
+                [10, 130, -10, 4, -46, 0],
+                2,
                 /=,
-                [0.5, 0.665, -0.05, 2.0, -1.365, 40.0]
+                [5, 65, -5, 2, -23, 0]
             )
         );
 
@@ -130,11 +130,11 @@ macro_rules! impl_scalar_assign_operators {
             *=,
             $crate::doc_scalar_assign_operator!(
                 "Multiply each element in `self` by `other`.",
-                f64,
-                [0.25, 1.0, -0.3, -1.0, 2.73, 1.2],
-                2.0,
+                i64,
+                [25, 10, -3, -1, 0, 12],
+                2,
                 *=,
-                [0.5, 2.0, -0.6, -2.0, 5.46, 2.4]
+                [50, 20, -6, -2, 0, 24]
             )
         );
 
@@ -190,11 +190,11 @@ macro_rules! impl_scalar_assign_operators {
             -=,
             $crate::doc_scalar_assign_operator!(
                 "Subtract `other` from all elements in `self`.",
-                f64,
-                [0.25, 1.0, -0.1, -1.0, -2.73, 1.3],
-                0.25,
+                i64,
+                [25, 1, -25, 0, -273, 13],
+                25,
                 -=,
-                [0.0, 0.75, -0.35, -1.25, -2.98, 1.05]
+                [0, -24, -50, -25, -298, -12]
             )
         );
     };
@@ -274,11 +274,11 @@ macro_rules! test_scalar_assign_operators {
         // Addition.
         $crate::test_scalar_assign_operator!(
             scalar_add_assign,
-            f64,
-            [0.25, 1.33, -0.1, 1.0, -2.73, 1.2],
-            0.25,
+            i64,
+            [25, 133, -1, 1, -273, 12],
+            13,
             +=,
-            [0.5, 1.58, 0.15, 1.25, -2.48, 1.45]
+            [38, 146, 12, 14, -260, 25]
         );
 
         // Bitwise AND.
@@ -314,21 +314,21 @@ macro_rules! test_scalar_assign_operators {
         // Division.
         $crate::test_scalar_assign_operator!(
             scalar_div_assign,
-            f64,
-            [1.0, 1.33, -0.1, 4.0, -2.73, 80.0],
-            2.0,
+            i64,
+            [10, 130, -10, 4, -46, 0],
+            2,
             /=,
-            [0.5, 0.665, -0.05, 2.0, -1.365, 40.0]
+            [5, 65, -5, 2, -23, 0]
         );
 
         // Multiplication.
         $crate::test_scalar_assign_operator!(
             scalar_mul_assign,
-            f64,
-            [0.25, 1.0, -0.3, -1.0, 2.73, 1.2],
-            2.0,
+            i64,
+            [25, 10, -3, -1, 0, 12],
+            2,
             *=,
-            [0.5, 2.0, -0.6, -2.0, 5.46, 2.4]
+            [50, 20, -6, -2, 0, 24]
         );
 
         // Remainder.
@@ -364,11 +364,11 @@ macro_rules! test_scalar_assign_operators {
         // Subtraction.
         $crate::test_scalar_assign_operator!(
             scalar_sub_assign,
-            f64,
-            [0.25, 1.0, -0.1, -1.0, -2.73, 1.3],
-            0.25,
+            i64,
+            [25, 1, -25, 0, -273, 13],
+            25,
             -=,
-            [0.0, 0.75, -0.35, -1.25, -2.98, 1.05]
+            [0, -24, -50, -25, -298, -12]
         );
     };
 }

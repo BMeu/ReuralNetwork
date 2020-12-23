@@ -17,7 +17,7 @@ use crate::Result;
 /// A layer of the neural network.
 ///
 /// The layer can be used as an input, hidden, or output layer.
-#[derive(Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Layer {
     /// The weights for this layer's input.
     ///
@@ -57,6 +57,22 @@ impl Layer {
 
     // endregion
 
+    // region Getters
+
+    /// Get the number of input nodes.
+    #[cfg(test)]
+    pub(crate) fn get_number_of_input_nodes(&self) -> usize {
+        self.weights.get_number_of_columns()
+    }
+
+    /// Get the number of output nodes.
+    #[cfg(test)]
+    pub(crate) fn get_number_of_output_nodes(&self) -> usize {
+        self.weights.get_number_of_rows()
+    }
+
+    // endregion
+
     // region AI
 
     /// Predict an output of this layer for the given input.
@@ -69,7 +85,7 @@ impl Layer {
     /// [`Error::DimensionMismatch`]: ../enum.Error.html#variant.DimensionMismatch
     pub fn predict(&self, input: Matrix<f64>) -> Result<Matrix<f64>> {
         // The input matrix must have only one column.
-        if input.get_columns() != 1 {
+        if input.get_number_of_columns() != 1 {
             return Err(Error::DimensionMismatch);
         }
 
@@ -95,6 +111,8 @@ mod tests {
 
     use std::num::NonZeroUsize;
 
+    use approx::assert_relative_eq;
+
     use crate::Error;
 
     // region Initialization
@@ -111,12 +129,12 @@ mod tests {
         let layer: Layer = layer_result.unwrap();
 
         // The weights are `output x input`, i.e. `3x2`.
-        assert_eq!(layer.weights.get_rows(), output_nodes.get());
-        assert_eq!(layer.weights.get_columns(), input_nodes.get());
+        assert_eq!(layer.weights.get_number_of_rows(), output_nodes.get());
+        assert_eq!(layer.weights.get_number_of_columns(), input_nodes.get());
 
         // The bias is `output x 1`, i.e. `3x1`.
-        assert_eq!(layer.bias.get_rows(), output_nodes.get());
-        assert_eq!(layer.bias.get_columns(), 1);
+        assert_eq!(layer.bias.get_number_of_rows(), output_nodes.get());
+        assert_eq!(layer.bias.get_number_of_columns(), 1);
     }
 
     /// Test creating a new layer when the size exceeds the maximum size.
@@ -126,17 +144,35 @@ mod tests {
         let output_nodes = NonZeroUsize::new(2).unwrap();
 
         let layer_result: Result<Layer> = Layer::new(input_nodes, output_nodes);
-        assert!(layer_result.is_err());
-
-        let is_correct_error: bool = match layer_result.unwrap_err() {
-            Error::DimensionsTooLarge => true,
-            _ => false,
-        };
 
         assert!(
-            is_correct_error,
+            matches!(layer_result, Err(Error::DimensionsTooLarge)),
             "Expected error Error::DimensionsTooLarge not satisfied."
         );
+    }
+
+    // endregion
+
+    // region Getters
+
+    /// Test getting the number of input nodes of the layer.
+    #[test]
+    fn get_number_of_input_nodes() {
+        let input_nodes = NonZeroUsize::new(5).unwrap();
+        let output_nodes = NonZeroUsize::new(3).unwrap();
+
+        let layer = Layer::new(input_nodes, output_nodes).unwrap();
+        assert_eq!(layer.get_number_of_input_nodes(), input_nodes.get());
+    }
+
+    /// Test getting the number of output nodes of the layer.
+    #[test]
+    fn get_number_of_output_nodes() {
+        let input_nodes = NonZeroUsize::new(4).unwrap();
+        let output_nodes = NonZeroUsize::new(9).unwrap();
+
+        let layer = Layer::new(input_nodes, output_nodes).unwrap();
+        assert_eq!(layer.get_number_of_output_nodes(), output_nodes.get());
     }
 
     // endregion
@@ -160,11 +196,11 @@ mod tests {
         assert!(prediction_result.is_ok());
 
         let prediction: Matrix<f64> = prediction_result.unwrap();
-        assert_eq!(prediction.get_rows(), output_nodes.get());
-        assert_eq!(prediction.get_columns(), 1);
-        assert_eq!(
-            prediction.as_slice(),
-            &[0.851_952_801_968_310_6, 0.851_952_801_968_310_6]
+        assert_eq!(prediction.get_number_of_rows(), output_nodes.get());
+        assert_eq!(prediction.get_number_of_columns(), 1);
+        assert_relative_eq!(
+            *prediction.as_slice(),
+            [0.851_952_801_968_310_6, 0.851_952_801_968_310_6]
         );
     }
 
@@ -177,15 +213,9 @@ mod tests {
         let layer = Layer::new(input_nodes, output_nodes).unwrap();
         let input: Matrix<f64> = Matrix::new(input_nodes, output_nodes, 1.0).unwrap();
         let prediction_result: Result<Matrix<f64>> = layer.predict(input);
-        assert!(prediction_result.is_err());
-
-        let is_correct_error: bool = match prediction_result.unwrap_err() {
-            Error::DimensionMismatch => true,
-            _ => false,
-        };
 
         assert!(
-            is_correct_error,
+            matches!(prediction_result, Err(Error::DimensionMismatch)),
             "Expected error Error::DimensionMismatch not satisfied."
         );
     }
@@ -200,15 +230,9 @@ mod tests {
         let layer = Layer::new(input_nodes, output_nodes).unwrap();
         let input: Matrix<f64> = Matrix::new(output_nodes, one, 1.0).unwrap();
         let prediction_result: Result<Matrix<f64>> = layer.predict(input);
-        assert!(prediction_result.is_err());
-
-        let is_correct_error: bool = match prediction_result.unwrap_err() {
-            Error::DimensionMismatch => true,
-            _ => false,
-        };
 
         assert!(
-            is_correct_error,
+            matches!(prediction_result, Err(Error::DimensionMismatch)),
             "Expected error Error::DimensionMismatch not satisfied."
         );
     }
