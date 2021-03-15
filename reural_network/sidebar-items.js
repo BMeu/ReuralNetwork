@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Error","A wrapper type for all errors caused by this crate."]],"mod":[["matrix","A simple and naive implementation of mathematical matrices."]],"struct":[["NeuralNetwork","A neural network."],["NeuralNetworkBuilder","A builder for creating neural networks."]],"type":[["Result","A specialized `Result` type for Reural Network."]]});

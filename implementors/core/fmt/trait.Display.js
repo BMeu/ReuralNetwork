@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["reural_network"] = [{"text":"impl Display for Error","synthetic":false,"types":[]},{"text":"impl&lt;T&gt; Display for Matrix&lt;T&gt; <span class=\"where fmt-newline\">where<br>&nbsp;&nbsp;&nbsp;&nbsp;T: Display,&nbsp;</span>","synthetic":false,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

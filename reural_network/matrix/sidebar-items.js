@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["Matrix","A matrix is a 2-dimensional structure with specific dimensions that can hold data of any type."]]});

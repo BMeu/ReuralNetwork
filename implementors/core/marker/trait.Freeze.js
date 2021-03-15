@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["reural_network"] = [{"text":"impl Freeze for Error","synthetic":true,"types":[]},{"text":"impl&lt;T&gt; Freeze for Matrix&lt;T&gt;","synthetic":true,"types":[]},{"text":"impl Freeze for NeuralNetwork","synthetic":true,"types":[]},{"text":"impl Freeze for NeuralNetworkBuilder","synthetic":true,"types":[]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
